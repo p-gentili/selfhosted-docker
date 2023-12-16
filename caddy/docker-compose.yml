@@ -1,0 +1,23 @@
+version: "3"
+services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./config:/config
+      - ./data:/data
+    environment:
+      DOMAIN: ${DOMAIN}
+      EMAIL: ${EMAIL}
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true

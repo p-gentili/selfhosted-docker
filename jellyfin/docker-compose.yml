@@ -1,0 +1,17 @@
+version: "3"
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    volumes:
+      - ./config:/config
+      - ./cache:/cache
+      - ./media:/media
+    restart: 'unless-stopped'
+    networks:
+      - frontend 
+
+networks:
+  frontend:
+    name: frontend
+    external: true

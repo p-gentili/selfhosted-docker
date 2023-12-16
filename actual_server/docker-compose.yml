@@ -1,0 +1,15 @@
+version: "3"
+services:
+  actual_server:
+    image: docker.io/actualbudget/actual-server:latest
+    container_name: actual_server
+    volumes:
+      - ./data:/data
+    restart: 'unless-stopped'
+    networks:
+      - frontend 
+
+networks:
+  frontend:
+    name: frontend
+    external: true
