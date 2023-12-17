@@ -1,0 +1,14 @@
+version: "3"
+services:
+  adguardhome:
+    image: adguard/adguardhome:v0.107.43
+    container_name: adguardhome
+    volumes:
+      - ./work:/opt/adguardhome/work
+      - ./conf:/opt/adguardhome/conf
+    ports:
+      - '53:53/tcp'
+      - '53:53/udp'
+      - '3000:3000'
+      - '3080:80'
+    restart: 'unless-stopped'
