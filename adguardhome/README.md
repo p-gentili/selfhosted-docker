@@ -1,5 +1,6 @@
 # AdGuard Home
 Official website: [https://adguard.com/it/adguard-home/overview.html](https://adguard.com/it/adguard-home/overview.html)
+
 Github: [https://github.com/AdguardTeam/AdGuardHome](https://github.com/AdguardTeam/AdGuardHome)
 
 ## Install
