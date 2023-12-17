@@ -35,3 +35,9 @@ nextcloud.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+immich.{$DOMAIN} {
+	reverse_proxy immich_server:3001 {
+		header_up X-Real-IP {remote_host}
+	}
+}
