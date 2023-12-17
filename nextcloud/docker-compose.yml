@@ -1,7 +1,7 @@
 version: "3"
 services:
   nextcloud-db:
-    image: mariadb:latest
+    image: mariadb:11.2
     container_name: nextcloud-db
     restart: always
     command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
@@ -16,7 +16,7 @@ services:
       - backend
 
   nextcloud:
-    image: nextcloud:latest
+    image: nextcloud:28.0
     container_name: nextcloud
     volumes:
       - ./nextcloud:/var/www/html
