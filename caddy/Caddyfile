@@ -36,6 +36,14 @@ nextcloud.{$DOMAIN} {
 	}
 }
 
+office.{$DOMAIN} {
+	reverse_proxy nextcloud-code:9980 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
 immich.{$DOMAIN} {
 	reverse_proxy immich_server:3001 {
 		header_up X-Real-IP {remote_host}
