@@ -34,6 +34,25 @@ services:
       - frontend 
       - backend
 
+  code:
+    image: collabora/code:23.05.6.3.1
+    container_name: nextcloud-code
+    environment:
+      - username=admin
+      - password=${COLLABORA_PASSWORD}
+      - domain=${COLLABORA_FQDN}
+      - dictionaries=en it
+      - extra_params=--o:ssl.enable=true --o:ssl.termination=false
+    volumes:
+      - /etc/localtime:/etc/localtime
+      - /etc/timezone:/etc/timezone
+    cap_add:
+      - MKNOD
+    tty: true
+    restart: unless-stopped
+    networks:
+      - frontend
+
 networks:
   frontend:
     name: frontend
