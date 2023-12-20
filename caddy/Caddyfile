@@ -2,26 +2,26 @@
     email {$EMAIL}
 }
 
-vaultwarden.{$DOMAIN}:443 {
+vault.{$DOMAIN}:443 {
 	reverse_proxy /notifications/hub vaultwarden:3012
 	reverse_proxy vaultwarden:80 {
 		header_up X-Real-IP {remote_host}
 	}
 }
 
-actual.{$DOMAIN}:443 {
+budget.{$DOMAIN}:443 {
 	reverse_proxy actual_server:5006 {
 		header_up X-Real-IP {remote_host}
 	}
 }
 
-jellyfin.{$DOMAIN}:443 {
+stream.{$DOMAIN}:443 {
 	reverse_proxy jellyfin:8096 {
 		header_up X-Real-IP {remote_host}
 	}
 }
 
-nextcloud.{$DOMAIN} {
+drive.{$DOMAIN} {
 	encode gzip zstd
 
         redir /.well-known/carddav /remote.php/dav 301
@@ -44,7 +44,7 @@ office.{$DOMAIN} {
 	}
 }
 
-immich.{$DOMAIN} {
+photos.{$DOMAIN} {
 	reverse_proxy immich_server:3001 {
 		header_up X-Real-IP {remote_host}
 	}
