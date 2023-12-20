@@ -40,7 +40,7 @@ services:
     environment:
       - username=admin
       - password=${COLLABORA_PASSWORD}
-      - domain=${COLLABORA_FQDN}
+      - domain=${NEXTCLOUD_FQDN}
       - dictionaries=en it
       - extra_params=--o:ssl.enable=true --o:ssl.termination=false
     volumes:
