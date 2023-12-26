@@ -15,6 +15,7 @@ graph TD
         vaultwarden[Vaultwarden]
         jellyfin[Jellyfin]
         actual[Actual Budget]
+        transmission[Transmission]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -39,4 +40,5 @@ graph TD
   caddy --> nextcloud
   caddy --> actual
   caddy --> immich
+  caddy --> transmission
 ```
