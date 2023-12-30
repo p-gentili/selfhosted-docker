@@ -11,6 +11,35 @@ services:
     networks:
       - frontend 
 
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ./radarr-config:/config
+      - ./media/movies:/movies
+    restart: 'unless-stopped'
+    networks:
+      - frontend 
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ./sonarr-config:/config
+      - ./media/tvshows:/tv
+    restart: 'unless-stopped'
+    networks:
+      - frontend 
+
+
 networks:
   frontend:
     name: frontend
