@@ -55,3 +55,16 @@ download.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+download.movies.{$DOMAIN}:443 {
+	reverse_proxy radarr:7878 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+stream.tvshows.{$DOMAIN}:443 {
+	reverse_proxy sonarr:8989 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
