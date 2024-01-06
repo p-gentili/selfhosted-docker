@@ -11,6 +11,7 @@ graph TD
     subgraph Docker Containers
       caddy[Caddy]
       adguard-home[AdGuard Home]
+      cloudflare-ddns[CloudFlare DDNS]
       subgraph CaddyServices
         vaultwarden[Vaultwarden]
         jellyfin[Jellyfin]
