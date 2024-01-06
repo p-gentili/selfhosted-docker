@@ -35,7 +35,7 @@ services:
       - backend
 
   code:
-    image: collabora/code:23.05.6.3.1
+    image: collabora/code:23.05.6.4.1
     container_name: nextcloud-code
     environment:
       - username=admin
