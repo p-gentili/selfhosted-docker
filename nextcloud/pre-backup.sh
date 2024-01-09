@@ -1,6 +1,9 @@
 #!/bin/bash
 
-source .env
+set -e
 
-docker exec -u www-data php occ maintenance:mode --on
-docker exec db_container_name mysqldump [--user nextcloud] [--password=$MYSQL_PASSWORD] databasename > dump.bak
+DIRNAME=$(dirname "$(realpath "$0")")
+source $DIRNAME/.env
+
+docker exec -u www-data nextcloud php occ maintenance:mode --on
+docker exec nextcloud-db mariadb-dump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD" > "$DIRNAME/dump.bak"
