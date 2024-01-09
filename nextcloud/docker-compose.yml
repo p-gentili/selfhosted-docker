@@ -6,7 +6,7 @@ services:
     restart: always
     command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
     volumes:
-      - ./database:/var/lib/mysql:Z
+      - database:/var/lib/mysql:Z
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
@@ -58,4 +58,7 @@ networks:
     name: frontend
     external: true
   backend:
+
+volumes:
+  database:
 

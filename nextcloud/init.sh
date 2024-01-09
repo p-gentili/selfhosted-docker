@@ -1,11 +1,15 @@
 #!/bin/bash
-source .env
 
-docker compose down -v
-docker compose up -d
+DIRNAME=$(dirname "$(realpath "$0")")
+COMPOSE=$DIRNAME/docker-compose.yml
+source $DIRNAME/.env
 
-BACKUP=dump.bak
+docker compose -f $COMPOSE down -v
+docker compose -f $COMPOSE up -d
+
+BACKUP=$DIRNAME/dump.bak
 if [[ -e $BACKUP ]]; then
     echo "Restoring Nextcloud DB backup..."
-    docker exec -i nextcloud-db mysql [--user nextcloud] [--password=$MYSQL_PASSWORD] nextcloud < $BACKUP
+    sleep 15
+    docker exec -i nextcloud-db sh -c 'exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"' < $BACKUP
 fi
