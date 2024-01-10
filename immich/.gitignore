@@ -1,3 +1,4 @@
 .env
 hwaccel.yml
 library
+dump.sql.gz
