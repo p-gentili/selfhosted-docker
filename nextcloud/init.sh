@@ -13,3 +13,6 @@ if [[ -e $BACKUP ]]; then
     sleep 15
     docker exec -i nextcloud-db sh -c 'exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"' < $BACKUP
 fi
+
+sudo chown -R www-data:www-data $DIRNAME/nextcloud/*
+docker exec -u www-data nextcloud php occ upgrade
