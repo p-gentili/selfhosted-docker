@@ -1,3 +1,5 @@
 #!/bin/bash
 
-sudo find . -name "post-backup.sh" -exec {} \;
+DIRNAME=$(dirname "$(realpath "$0")")
+
+sudo find $DIRNAME -name "post-backup.sh" -exec {} \;
