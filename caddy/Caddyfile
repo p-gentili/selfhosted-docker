@@ -55,3 +55,9 @@ download.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+gotify.{$DOMAIN} {
+	reverse_proxy gotify:80 {
+		header_up X-Real-IP {remote_host}
+	}
+}

@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  gotify:
+    image: gotify/server:2.4.0
+    container_name: gotify
+    environment:
+      - GOTIFY_DEFAULTUSER_PASS=${DEFAULT_PASSWORD}
+    volumes:
+      - "./data:/app/data"
+    networks:
+      - frontend 
+
+networks:
+  frontend:
+    name: frontend
+    external: true
