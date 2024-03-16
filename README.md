@@ -17,6 +17,7 @@ graph TD
         jellyfin[Jellyfin]
         actual[Actual Budget]
         transmission[Transmission]
+        linkding[Linkding]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -42,6 +43,7 @@ graph TD
   caddy --> actual
   caddy --> immich
   caddy --> transmission
+  caddy --> linkding
 ```
 
 ## Install
