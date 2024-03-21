@@ -16,3 +16,4 @@ fi
 
 sudo chown -R www-data:www-data $DIRNAME/nextcloud/*
 docker exec -u www-data nextcloud php occ upgrade
+docker exec -u www-data nextcloud php occ maintenance:mode --off
