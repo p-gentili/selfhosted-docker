@@ -1,4 +1,5 @@
 .env
+dump.sql.gz
 hwaccel.yml
 library
-dump.sql.gz
+pgdata
