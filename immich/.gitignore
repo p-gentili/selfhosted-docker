@@ -3,3 +3,4 @@ dump.sql.gz
 hwaccel.yml
 library
 pgdata
+postgres

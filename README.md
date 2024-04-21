@@ -18,6 +18,7 @@ graph TD
         actual[Actual Budget]
         transmission[Transmission]
         linkding[Linkding]
+        ghostfolio[Ghostfolio]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -44,6 +45,7 @@ graph TD
   caddy --> immich
   caddy --> transmission
   caddy --> linkding
+  caddy --> ghostfolio
 ```
 
 ## Install

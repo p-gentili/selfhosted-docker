@@ -67,3 +67,9 @@ bookmarks.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+portfolio.{$DOMAIN}:443 {
+	reverse_proxy ghostfolio:3333 {
+		header_up X-Real-IP {remote_host}
+	}
+}
