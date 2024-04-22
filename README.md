@@ -19,6 +19,7 @@ graph TD
         transmission[Transmission]
         linkding[Linkding]
         ghostfolio[Ghostfolio]
+        freshrss[FreshRSS]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -46,6 +47,7 @@ graph TD
   caddy --> transmission
   caddy --> linkding
   caddy --> ghostfolio
+  caddy --> freshrss
 ```
 
 ## Install

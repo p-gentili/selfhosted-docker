@@ -1,0 +1,77 @@
+version: "2.4"
+
+volumes:
+  db:
+
+networks:
+  frontend:
+    name: frontend
+    external: true
+  backend:
+    ipam:
+      config:
+        - subnet: 192.168.96.0/20
+          gateway: 192.168.96.1
+
+services:
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    hostname: freshrss
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - ./data:/var/www/FreshRSS/data
+      - ./extensions:/var/www/FreshRSS/extensions
+    env_file:
+      - .env
+    environment:
+      TZ: ${TIMEZONE}
+      CRON_MIN: '3,33'
+      TRUSTED_PROXY: 192.168.0.1/16 172.24.0.0/16
+      FRESHRSS_INSTALL: |-
+        --api_enabled
+        --base_url ${BASE_URL}
+        --db-base ${DB_BASE}
+        --db-host 192.168.96.3
+        --db-password ${DB_PASSWORD}
+        --db-type pgsql
+        --db-user ${DB_USER}
+        --default_user admin
+        --language en
+      FRESHRSS_USER: |-
+        --api_password ${ADMIN_API_PASSWORD}
+        --email ${ADMIN_EMAIL}
+        --language en
+        --password ${ADMIN_PASSWORD}
+        --user admin
+    networks:
+      - frontend
+      - backend
+
+  freshrss-db:
+    image: postgres:16
+    container_name: freshrss-db
+    hostname: freshrss-db
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_BASE:-freshrss}
+      POSTGRES_USER: ${DB_USER:-freshrss}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-freshrss}
+    command:
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - work_mem=32MB
+    networks:
+      backend:
+        ipv4_address: "192.168.96.3"
