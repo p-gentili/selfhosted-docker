@@ -1,7 +1,6 @@
-version: "3"
 services:
   actual_server:
-    image: actualbudget/actual-server:24.3.0
+    image: actualbudget/actual-server
     container_name: actual_server
     volumes:
       - ./data:/data
