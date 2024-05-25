@@ -1,8 +1,6 @@
-version: "3"
-
 services:
   gotify:
-    image: gotify/server:2.4
+    image: gotify/server:latest
     container_name: gotify
     environment:
       - GOTIFY_DEFAULTUSER_PASS=${DEFAULT_PASSWORD}
