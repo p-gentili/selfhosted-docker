@@ -1,7 +1,6 @@
-version: "3"
 services:
   adguardhome:
-    image: adguard/adguardhome:v0.107.45
+    image: adguard/adguardhome:latest
     container_name: adguardhome
     volumes:
       - ./work:/opt/adguardhome/work
