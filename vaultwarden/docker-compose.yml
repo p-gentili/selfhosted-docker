@@ -1,7 +1,6 @@
-version: "3"
 services:
   vaultwarden:
-    image: vaultwarden/server:1.30.5
+    image: vaultwarden/server:latest
     container_name: vaultwarden
     volumes:
       - /etc/localtime:/etc/localtime:ro
