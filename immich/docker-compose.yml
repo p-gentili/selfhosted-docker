@@ -14,7 +14,9 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    command: [ "start.sh", "immich" ]
+    extends:
+      file: hwaccel.transcoding.yml
+      service: quicksync
     volumes:
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
@@ -26,27 +28,6 @@ services:
     restart: always
     networks:
       - frontend
-      - backend
-    labels:
-      - "com.centurylinklabs.watchtower.enable=false"
-
-  immich-microservices:
-    container_name: immich_microservices
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    extends:
-      file: hwaccel.transcoding.yml
-      service: quicksync
-    command: [ "start.sh", "microservices" ]
-    volumes:
-      - ${UPLOAD_LOCATION}:/usr/src/app/upload
-      - /etc/localtime:/etc/localtime:ro
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - database
-    restart: always
-    networks:
       - backend
     labels:
       - "com.centurylinklabs.watchtower.enable=false"
