@@ -1,4 +1,3 @@
-version: "3"
 services:
   nextcloud-db:
     image: mariadb:11.2
@@ -35,7 +34,7 @@ services:
       - backend
 
   code:
-    image: collabora/code:24.04.2.1.1
+    image: collabora/code:latest
     container_name: nextcloud-code
     environment:
       - username=admin
