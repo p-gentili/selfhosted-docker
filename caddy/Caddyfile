@@ -84,3 +84,9 @@ feed.{$DOMAIN}:443 {
 	        header_up X-Forwarded-Ssl {on}
 	}
 }
+
+recipes.{$DOMAIN} {
+	reverse_proxy mealie:9000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
