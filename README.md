@@ -20,6 +20,7 @@ graph TD
         linkding[Linkding]
         ghostfolio[Ghostfolio]
         freshrss[FreshRSS]
+        mealy[Mealy]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -48,6 +49,7 @@ graph TD
   caddy --> linkding
   caddy --> ghostfolio
   caddy --> freshrss
+  caddy --> mealy
 ```
 
 ## Install
