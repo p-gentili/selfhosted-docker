@@ -24,8 +24,8 @@ stream.{$DOMAIN}:443 {
 drive.{$DOMAIN} {
 	encode gzip zstd
 
-        redir /.well-known/carddav /remote.php/dav 301
-        redir /.well-known/caldav /remote.php/dav 301
+        redir /.well-known/carddav /remote.php/dav/ 301
+        redir /.well-known/caldav /remote.php/dav/ 301
 
 	header {
 		Strict-Transport-Security max-age=15552000;
