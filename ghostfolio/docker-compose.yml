@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   ghostfolio:
     image: ghostfolio/ghostfolio:2
@@ -24,6 +23,7 @@ services:
     networks:
       - frontend 
       - backend
+    restart: 'unless-stopped'
 
   postgres:
     image: postgres:15
@@ -39,6 +39,7 @@ services:
       - postgres:/var/lib/postgresql/data
     networks:
       - backend
+    restart: 'unless-stopped'
 
   redis:
     image: redis:alpine
@@ -53,6 +54,7 @@ services:
       retries: 5
     networks:
       - backend
+    restart: 'unless-stopped'
 
 networks:
   frontend:

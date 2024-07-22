@@ -8,6 +8,7 @@ services:
       - "./data:/app/data"
     networks:
       - frontend 
+    restart: 'unless-stopped'
 
 networks:
   frontend:
