@@ -98,3 +98,11 @@ changedetection.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+syncthing.{$DOMAIN} {
+	reverse_proxy syncthing:8384 {
+	     header_up X-Forwarded-For {http.request.remote.host}  
+	     header_up X-Client-Port {http.request.remote.port}  
+	     header_up X-Tls-Client-Cert-Der-Base64 {http.request.tls.client.certificate\_der\_base64}  
+	}
+}
