@@ -1,0 +1,17 @@
+services:
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io:latest
+    container_name: changedetection
+    hostname: changedetection
+    volumes:
+      - ./data:/datastore
+    restart: unless-stopped
+    networks:
+      - frontend 
+    env_file:
+      - .env
+
+networks:
+  frontend:
+    name: frontend
+    external: true

@@ -21,6 +21,7 @@ graph TD
         ghostfolio[Ghostfolio]
         freshrss[FreshRSS]
         mealy[Mealy]
+        changedetection[changedetection.io]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -50,6 +51,7 @@ graph TD
   caddy --> ghostfolio
   caddy --> freshrss
   caddy --> mealy
+  caddy --> changedetection
 ```
 
 ## Install
