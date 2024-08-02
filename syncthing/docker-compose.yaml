@@ -1,0 +1,17 @@
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./data:/var/syncthing
+    restart: unless-stopped
+    networks:
+      - frontend 
+
+networks:
+  frontend:
+    name: frontend
+    external: true
