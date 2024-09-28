@@ -1,0 +1,56 @@
+services:
+
+  app:
+    container_name: maybe
+    image: ghcr.io/maybe-finance/maybe:latest
+    volumes:
+      - ./storage:/rails/storage
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SELF_HOSTING_ENABLED: "true"
+      RAILS_FORCE_SSL: "false"
+      RAILS_ASSUME_SSL: "false"
+      GOOD_JOB_EXECUTION_MODE: async
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?}
+      DB_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-maybe_production}
+      POSTGRES_USER: ${POSTGRES_USER:-maybe_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+
+    networks:
+      - backend
+      - frontend
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: maybe_postgres
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-maybe_user}
+      POSTGRES_DB: ${POSTGRES_DB:-maybe_production}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+volumes:
+  postgres-data:
+networks:
+  frontend:
+    name: frontend
+    external: true
+  backend:

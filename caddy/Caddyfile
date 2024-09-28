@@ -15,6 +15,12 @@ budget.{$DOMAIN}:443 {
 	}
 }
 
+budget2.{$DOMAIN}:443 {
+	reverse_proxy maybe:3000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
 stream.{$DOMAIN}:443 {
 	reverse_proxy jellyfin:8096 {
 		header_up X-Real-IP {remote_host}
