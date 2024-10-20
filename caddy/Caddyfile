@@ -51,7 +51,7 @@ office.{$DOMAIN} {
 }
 
 photos.{$DOMAIN} {
-	reverse_proxy immich_server:3001 {
+	reverse_proxy immich_server:2283 {
 		header_up X-Real-IP {remote_host}
 	}
 }
