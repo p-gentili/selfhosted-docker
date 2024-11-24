@@ -112,3 +112,8 @@ syncthing.{$DOMAIN} {
 	     header_up X-Tls-Client-Cert-Der-Base64 {http.request.tls.client.certificate\_der\_base64}  
 	}
 }
+
+abs.{$DOMAIN} {
+        encode gzip zstd
+    	reverse_proxy audiobookshelf:80
+}
