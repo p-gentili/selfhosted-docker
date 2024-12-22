@@ -5,6 +5,7 @@ services:
     restart: always
     volumes:
       - ./audiobooks:/audiobooks
+      - ./books:/books
       - ./podcasts:/podcasts
       - ./config:/config
       - ./metadata:/metadata
