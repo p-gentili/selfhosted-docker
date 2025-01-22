@@ -1,4 +1,3 @@
-version: "2.1"
 services:
   transmission:
     image: lscr.io/linuxserver/transmission:latest
@@ -11,7 +10,7 @@ services:
       - PASS=${PASSWORD}
     volumes:
       - ./config:/config
-      - ./downloads:/downloads
+      - /media/external/downloads:/downloads
       - ./watch:/watch
     ports:
       - 51413:51413
