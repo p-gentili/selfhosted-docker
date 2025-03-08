@@ -117,3 +117,8 @@ abs.{$DOMAIN} {
         encode gzip zstd
     	reverse_proxy audiobookshelf:80
 }
+
+assistant.{$DOMAIN} {
+        encode gzip zstd
+    	reverse_proxy homeassistant:8123
+}
