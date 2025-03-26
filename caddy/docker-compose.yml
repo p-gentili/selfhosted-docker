@@ -14,7 +14,8 @@ services:
       DOMAIN: ${DOMAIN}
       EMAIL: ${EMAIL}
     networks:
-      - frontend
+      frontend:
+        ipv4_address: 172.24.0.14
 
 networks:
   frontend:
