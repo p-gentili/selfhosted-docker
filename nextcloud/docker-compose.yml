@@ -33,6 +33,16 @@ services:
       - frontend 
       - backend
 
+  cron:
+    image: nextcloud:apache
+    restart: always
+    volumes: # NOTE: The `volumes` config of the `cron` and `app` containers must match
+      - ./nextcloud:/var/www/html:z
+    entrypoint: /cron.sh
+    depends_on:
+      - nextcloud-db
+        # - redis
+
   code:
     image: collabora/code:latest
     container_name: nextcloud-code
