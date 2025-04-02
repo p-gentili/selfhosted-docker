@@ -33,6 +33,12 @@ services:
       - frontend 
       - backend
 
+  redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - backend
+
   cron:
     image: nextcloud:apache
     restart: always
@@ -41,7 +47,7 @@ services:
     entrypoint: /cron.sh
     depends_on:
       - nextcloud-db
-        # - redis
+      - redis
 
   code:
     image: collabora/code:latest
