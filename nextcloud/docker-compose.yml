@@ -40,7 +40,6 @@ services:
     restart: always
     networks:
       - backend
-      - frontend
 
   cron:
     image: nextcloud:apache
@@ -76,6 +75,7 @@ services:
     tty: true
     restart: unless-stopped
     networks:
+      - backend
       - frontend
 
 networks:
