@@ -2,14 +2,10 @@ services:
   ghostfolio:
     image: ghostfolio/ghostfolio:2
     container_name: ghostfolio
+    restart: unless-stopped
     init: true
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?connect_timeout=300&sslmode=prefer
-      NODE_ENV: production
-      REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -23,15 +19,16 @@ services:
     networks:
       - frontend 
       - backend
-    restart: 'unless-stopped'
 
   postgres:
     image: postgres:15
     container_name: ghostfolio_postgres
+    restart: unless-stopped
     env_file:
       - .env
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      test:
+        ['CMD-SHELL', 'pg_isready -d "$${POSTGRES_DB}" -U $${POSTGRES_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,22 +36,33 @@ services:
       - postgres:/var/lib/postgresql/data
     networks:
       - backend
-    restart: 'unless-stopped'
 
   redis:
     image: redis:alpine
     container_name: ghostfolio_redis
+    restart: unless-stopped
+    user: '999:1000'
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     env_file:
       - .env
-    command: ['redis-server', '--requirepass', $REDIS_PASSWORD]
+    command:
+      - /bin/sh
+      - -c
+      - >
+        redis-server
+        --port "$${REDIS_PORT:?REDIS_PORT variable is not set}"
+        --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}"
     healthcheck:
-      test: ['CMD-SHELL', 'redis-cli --pass $REDIS_PASSWORD ping | grep PONG']
+      test:
+        ['CMD-SHELL', 'redis-cli -p "$${REDIS_PORT}" --pass "$${REDIS_PASSWORD}" ping | grep PONG']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - backend
-    restart: 'unless-stopped'
 
 networks:
   frontend:
