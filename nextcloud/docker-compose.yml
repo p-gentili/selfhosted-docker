@@ -38,16 +38,24 @@ services:
     restart: always
     networks:
       - backend
+      - frontend
 
   cron:
     image: nextcloud:apache
     restart: always
     volumes: # NOTE: The `volumes` config of the `cron` and `app` containers must match
-      - ./nextcloud:/var/www/html:z
+      - ./nextcloud:/var/www/html
     entrypoint: /cron.sh
     depends_on:
       - nextcloud-db
       - redis
+    environment:
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=nextcloud-db
+    networks:
+      - backend
 
   code:
     image: collabora/code:latest
