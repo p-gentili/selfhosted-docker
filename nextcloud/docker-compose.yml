@@ -26,6 +26,8 @@ services:
       - MYSQL_HOST=nextcloud-db
       - OVERWRITEPROTOCOL=https
       - TRUSTED_PROXIES=${PROXY_IP}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     restart: 'unless-stopped'
     links:
       - nextcloud-db
