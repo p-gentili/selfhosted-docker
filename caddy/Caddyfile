@@ -122,3 +122,9 @@ assistant.{$DOMAIN} {
         encode gzip zstd
     	reverse_proxy homeassistant:8123
 }
+
+paperless.{$DOMAIN} {
+	reverse_proxy paperlessngx:8000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
