@@ -16,6 +16,8 @@ services:
       - redis
       - database
     restart: always
+    healthcheck:
+      disable: false
     networks:
       - frontend
       - backend
@@ -33,6 +35,8 @@ services:
     env_file:
       - .env
     restart: always
+    healthcheck:
+      disable: false
     networks:
       - backend
     labels:
@@ -41,6 +45,8 @@ services:
   redis:
     container_name: immich_redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:42cba146593a5ea9a622002c1b7cba5da7be248650cbb64ecb9c6c33d29794b1
+    healthcheck:
+      test: redis-cli ping || exit 1
     restart: always
     networks:
       - backend
@@ -49,7 +55,7 @@ services:
 
   database:
     container_name: immich_postgres
-    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.1-pgvectors0.2.0
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:32324a2f41df5de9efe1af166b7008c3f55646f8d0e00d9550c16c9822366b4a
     env_file:
       - .env
     environment:
@@ -60,7 +66,8 @@ services:
       # Uncomment the DB_STORAGE_TYPE: 'HDD' var if your database isn't stored on SSDs
       # DB_STORAGE_TYPE: 'HDD'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
+    shm_size: 128mb
     restart: always
     networks:
       - backend
@@ -69,11 +76,9 @@ services:
 
 volumes:
   model-cache:
-  pgdata:
 
 networks:
   frontend:
     name: frontend
     external: true
   backend:
-
