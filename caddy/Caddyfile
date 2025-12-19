@@ -122,3 +122,7 @@ paperless.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+ebooks.{$DOMAIN} {
+    	reverse_proxy booklore:6060
+}
