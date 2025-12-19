@@ -1,0 +1,54 @@
+services:
+  booklore:
+    image: booklore/booklore:latest
+    container_name: booklore
+    environment:
+      - USER_ID=0
+      - GROUP_ID=0
+      - TZ=Etc/UTC
+      - DATABASE_URL=jdbc:mariadb://mariadb:3306/booklore
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - BOOKLORE_PORT=${BOOKLORE_PORT}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./books:/books
+      - ./bookdrop:/bookdrop
+    restart: unless-stopped
+    networks:
+      - backend
+      - frontend
+
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:11.4.5
+    container_name: booklore-db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=booklore
+      - MYSQL_USER=${DATABASE_USERNAME}
+      - MYSQL_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - database:/config
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
+  backend:
+
+volumes:
+  database:
