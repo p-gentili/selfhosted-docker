@@ -15,7 +15,6 @@ graph TD
       subgraph CaddyServices
         vaultwarden[Vaultwarden]
         jellyfin[Jellyfin]
-        actual[Actual Budget]
         transmission[Transmission]
         linkding[Linkding]
         ghostfolio[Ghostfolio]
@@ -44,7 +43,6 @@ graph TD
   caddy --> vaultwarden
   caddy --> jellyfin
   caddy --> nextcloud
-  caddy --> actual
   caddy --> immich
   caddy --> transmission
   caddy --> linkding
