@@ -7,13 +7,13 @@ source $DIRNAME/.env
 docker compose -f $COMPOSE down -v
 docker compose -f $COMPOSE pull
 docker compose -f $COMPOSE create
-docker start immich_postgres
+docker start freshrss-db
 
 DUMP="$DIRNAME/dump.sql.gz"
 if [[ -e $DUMP ]]; then
-    echo "Restoring Immich DB backup..."
+    echo "Restoring FreshRSS DB backup..."
     sleep 10    # Wait for Postgres server to start up
-    gunzip < $DUMP | docker exec -i immich_postgres psql -U $DB_USER -d $DB_BASE    # Restore Backup
+    gunzip < $DUMP | docker exec -i freshrss-db psql -U $DB_USER -d $DB_BASE    # Restore Backup
 fi
 
 docker compose -f $COMPOSE up -d
