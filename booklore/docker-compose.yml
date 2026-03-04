@@ -16,6 +16,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./books:/books
+      - ./mangas:/mangas
       - ./bookdrop:/bookdrop
     restart: unless-stopped
     networks:
