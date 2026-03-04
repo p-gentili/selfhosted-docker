@@ -9,12 +9,6 @@ vault.{$DOMAIN}:443 {
 	}
 }
 
-budget.{$DOMAIN}:443 {
-	reverse_proxy actual_server:5006 {
-		header_up X-Real-IP {remote_host}
-	}
-}
-
 stream.{$DOMAIN}:443 {
 	reverse_proxy jellyfin:8096 {
 		header_up X-Real-IP {remote_host}
