@@ -15,7 +15,7 @@ services:
       EMAIL: ${EMAIL}
     networks:
       frontend:
-        ipv4_address: 172.24.0.12
+        ipv4_address: 172.18.0.24
 
 networks:
   frontend:
