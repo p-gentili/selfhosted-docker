@@ -1,0 +1,17 @@
+services:
+  wallos:
+    container_name: wallos
+    image: bellamy/wallos:latest
+    environment:
+      TZ: 'Europe/Rome'
+    volumes:
+      - './db:/var/www/html/db'
+      - './logos:/var/www/html/images/uploads/logos'
+    restart: unless-stopped
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true

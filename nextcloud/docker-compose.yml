@@ -15,7 +15,7 @@ services:
       - backend
 
   nextcloud:
-    image: nextcloud:32
+    image: nextcloud:33
     container_name: nextcloud
     volumes:
       - ./nextcloud:/var/www/html

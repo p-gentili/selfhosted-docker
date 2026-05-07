@@ -1,0 +1,15 @@
+services:
+  komga:
+    image: gotson/komga
+    container_name: komga
+    volumes:
+      - ./config:/config
+      - ./data:/data
+    restart: unless-stopped
+    networks:
+      - frontend 
+
+networks:
+  frontend:
+    name: frontend
+    external: true

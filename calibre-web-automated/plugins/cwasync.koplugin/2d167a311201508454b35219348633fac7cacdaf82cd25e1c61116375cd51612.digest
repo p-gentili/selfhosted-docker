@@ -1,0 +1,7 @@
+Plugin files digest: 2d167a311201508454b35219348633fac7cacdaf82cd25e1c61116375cd51612
+Build date: Wed Feb  4 11:42:57 PM UTC 2026
+Files included:
+cwasync.koplugin/api.json
+cwasync.koplugin/CWASyncClient.lua
+cwasync.koplugin/main.lua
+cwasync.koplugin/_meta.lua
