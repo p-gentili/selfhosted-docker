@@ -118,5 +118,12 @@ paperless.{$DOMAIN} {
 }
 
 ebooks.{$DOMAIN} {
-    	reverse_proxy booklore:6060
+    	reverse_proxy calibre-web-automated:8083
+}
+
+mangas.{$DOMAIN} {
+    	reverse_proxy komga:25600
+}
+subscriptions.{$DOMAIN} {
+    	reverse_proxy wallos:80
 }

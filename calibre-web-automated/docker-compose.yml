@@ -1,0 +1,33 @@
+---
+services:
+  calibre-web-automated:
+    image: crocodilestick/calibre-web-automated:latest
+    container_name: calibre-web-automated
+    environment:
+      # Only change these if you know what you're doing
+      - PUID=1000
+      - PGID=1000
+      # Edit to match your current timezone https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      - TZ=Europe/Rome
+      # Hardcover API Key required for Hardcover as a Metadata Provider, get one here: https://docs.hardcover.app/api/getting-started/
+      - HARDCOVER_TOKEN=your_hardcover_api_key_here
+      # If your library is on a network share (e.g., NFS/SMB), disable WAL to reduce locking issues
+      # Accepts: true/false (default: false)
+      - NETWORK_SHARE_MODE=false
+      # Override the default port (8083) for the web server.
+      # Accepts any valid port number.
+      - CWA_PORT_OVERRIDE=8083
+    volumes:
+      - ./config:/config
+      - ./ingest:/cwa-book-ingest
+      - ./library:/calibre-library
+      - ./plugins:/config/.config/calibre/plugins
+    restart: unless-stopped
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
+  backend:
