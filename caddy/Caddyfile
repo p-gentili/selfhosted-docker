@@ -127,3 +127,9 @@ mangas.{$DOMAIN} {
 subscriptions.{$DOMAIN} {
     	reverse_proxy wallos:80
 }
+
+auth.{$DOMAIN} {
+	reverse_proxy authentik-server:9000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
