@@ -24,13 +24,16 @@ Run from the host (replace the placeholders):
 docker exec -u www-data nextcloud php occ app:install user_oidc
 docker exec -u www-data nextcloud php occ app:enable  user_oidc
 
-# Register Authentik as a provider
+# Register Authentik as a provider.
+# `preferred_username` + `unique-uid=0` makes the Nextcloud UID equal the Authentik
+# username verbatim, so SSO logins link to an existing local account whose username
+# matches. Don't rename users in Authentik after linking — it would orphan their data.
 docker exec -u www-data nextcloud php occ user_oidc:provider Authentik \
     --clientid="<CLIENT_ID>" \
     --clientsecret="<CLIENT_SECRET>" \
     --discoveryuri="https://auth.YOURDOMAIN/application/o/nextcloud/.well-known/openid-configuration" \
     --scope="openid email profile" \
-    --mapping-uid=sub \
+    --mapping-uid=preferred_username \
     --mapping-display-name=name \
     --mapping-email=email \
     --unique-uid=0
@@ -40,9 +43,10 @@ docker exec -u www-data nextcloud php occ config:app:set --value=0 user_oidc all
 ```
 
 ### Linking your existing Nextcloud user to Authentik
-With `--unique-uid=0` above, the OIDC provider matches users by `email`, so as long as the
-email on your Authentik user matches the email on your existing Nextcloud user, the first
-SSO login attaches to the existing account. Otherwise a new account is auto-provisioned.
+The provider config above uses the `preferred_username` claim as the Nextcloud UID
+(unhashed). So as long as your Authentik user's **Username** field exactly equals an
+existing Nextcloud username (check with `occ user:list`), the first SSO login attaches
+to that existing account instead of creating a new one.
 
 ### Recovering local admin login
 If SSO is misconfigured and you locked yourself out, append `?direct=1` to the login URL:
