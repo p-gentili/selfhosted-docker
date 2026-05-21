@@ -2,8 +2,8 @@ volumes:
   db:
 
 networks:
-  frontend:
-    name: frontend
+  caddy_freshrss:
+    name: caddy_freshrss
     external: true
   backend:
     ipam:
@@ -46,7 +46,7 @@ services:
         --password ${ADMIN_PASSWORD}
         --user admin
     networks:
-      - frontend
+      - caddy_freshrss
       - backend
 
   freshrss-db:

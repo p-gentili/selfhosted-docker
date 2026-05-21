@@ -12,9 +12,9 @@ services:
     env_file:
       - .env
     networks:
-      - frontend 
+      - caddy_mealie
 
 networks:
-  frontend:
-    name: frontend
+  caddy_mealie:
+    name: caddy_mealie
     external: true
