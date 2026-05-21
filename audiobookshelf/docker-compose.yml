@@ -12,9 +12,9 @@ services:
     environment:
       - TZ=Europe/Rome
     networks:
-      - frontend 
+      - caddy_audiobookshelf
 
 networks:
-  frontend:
-    name: frontend
+  caddy_audiobookshelf:
+    name: caddy_audiobookshelf
     external: true

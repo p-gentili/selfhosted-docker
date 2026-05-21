@@ -9,9 +9,9 @@ services:
       - './logos:/var/www/html/images/uploads/logos'
     restart: unless-stopped
     networks:
-      - frontend
+      - caddy_wallos
 
 networks:
-  frontend:
-    name: frontend
+  caddy_wallos:
+    name: caddy_wallos
     external: true

@@ -14,10 +14,85 @@ services:
       DOMAIN: ${DOMAIN}
       EMAIL: ${EMAIL}
     networks:
-      frontend:
-        ipv4_address: 172.18.0.24
+      - caddy_audiobookshelf
+      - caddy_authentik
+      - caddy_calibre
+      - caddy_changedetection
+      - caddy_freshrss
+      - caddy_ghostfolio
+      - caddy_gotify
+      - caddy_homeassistant
+      - caddy_immich
+      - caddy_jellyfin
+      - caddy_komga
+      - caddy_linkding
+      - caddy_mealie
+      - caddy_nextcloud
+      - caddy_opencloud
+      - caddy_paperless
+      - caddy_syncthing
+      - caddy_transmission
+      - caddy_vaultwarden
+      - caddy_wallos
 
 networks:
-  frontend:
-    name: frontend
+  caddy_audiobookshelf:
+    name: caddy_audiobookshelf
+    external: true
+  caddy_authentik:
+    name: caddy_authentik
+    external: true
+  caddy_calibre:
+    name: caddy_calibre
+    external: true
+  caddy_changedetection:
+    name: caddy_changedetection
+    external: true
+  caddy_freshrss:
+    name: caddy_freshrss
+    external: true
+  caddy_ghostfolio:
+    name: caddy_ghostfolio
+    external: true
+  caddy_gotify:
+    name: caddy_gotify
+    external: true
+  caddy_homeassistant:
+    name: caddy_homeassistant
+    external: true
+  caddy_immich:
+    name: caddy_immich
+    external: true
+  caddy_jellyfin:
+    name: caddy_jellyfin
+    external: true
+  caddy_komga:
+    name: caddy_komga
+    external: true
+  caddy_linkding:
+    name: caddy_linkding
+    external: true
+  caddy_mealie:
+    name: caddy_mealie
+    external: true
+  caddy_nextcloud:
+    name: caddy_nextcloud
+    external: true
+  caddy_opencloud:
+    name: caddy_opencloud
+    external: true
+  caddy_paperless:
+    name: caddy_paperless
+    external: true
+  caddy_syncthing:
+    name: caddy_syncthing
+    external: true
+  caddy_transmission:
+    name: caddy_transmission
+    external: true
+  caddy_vaultwarden:
+    name: caddy_vaultwarden
+    external: true
+  caddy_wallos:
+    name: caddy_wallos
     external: true

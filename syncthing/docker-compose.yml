@@ -9,9 +9,9 @@ services:
       - ./data:/var/syncthing
     restart: unless-stopped
     networks:
-      - frontend 
+      - caddy_syncthing
 
 networks:
-  frontend:
-    name: frontend
+  caddy_syncthing:
+    name: caddy_syncthing
     external: true

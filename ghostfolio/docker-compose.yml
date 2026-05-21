@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - frontend 
+      - caddy_ghostfolio
       - backend
 
   postgres:
@@ -65,8 +65,8 @@ services:
       - backend
 
 networks:
-  frontend:
-    name: frontend
+  caddy_ghostfolio:
+    name: caddy_ghostfolio
     external: true
   backend:
 
