@@ -1,0 +1,98 @@
+services:
+  opencloud:
+    image: opencloudeu/opencloud:latest
+    container_name: opencloud
+    restart: unless-stopped
+    entrypoint: /bin/sh
+    command: ["-c", "opencloud init || true; opencloud server"]
+    environment:
+      OC_URL: ${OPENCLOUD_FQDN}
+      OC_LOG_LEVEL: info
+      OC_LOG_COLOR: "false"
+      OC_LOG_PRETTY: "false"
+      OC_INSECURE: "false"
+      PROXY_TLS: "false"
+      PROXY_HTTP_ADDR: 0.0.0.0:9200
+
+      # Initial admin (used only if no admin exists yet)
+      IDM_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+      IDM_CREATE_DEMO_USERS: "false"
+
+      # External OIDC via Authentik
+      OC_OIDC_ISSUER: ${OIDC_ISSUER_URL}
+      WEB_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      WEB_OIDC_METADATA_URL: ${OIDC_ISSUER_URL}.well-known/openid-configuration
+      PROXY_AUTOPROVISION_ACCOUNTS: "true"
+      PROXY_OIDC_REWRITE_WELLKNOWN: "true"
+      PROXY_USER_OIDC_CLAIM: preferred_username
+      PROXY_USER_CS3_CLAIM: username
+
+      # Service discovery for the external collaboration container
+      MICRO_REGISTRY: nats-js-kv
+      MICRO_REGISTRY_ADDRESS: opencloud:9233
+      NATS_NATS_HOST: 0.0.0.0
+      NATS_NATS_PORT: "9233"
+    volumes:
+      - ./config:/etc/opencloud
+      - ./data:/var/lib/opencloud
+    networks:
+      - frontend
+      - backend
+
+  opencloud-collaboration:
+    image: opencloudeu/opencloud:latest
+    container_name: opencloud-collaboration
+    restart: unless-stopped
+    depends_on:
+      - opencloud
+      - opencloud-collabora
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["opencloud collaboration server"]
+    environment:
+      MICRO_REGISTRY: nats-js-kv
+      MICRO_REGISTRY_ADDRESS: opencloud:9233
+
+      COLLABORATION_GRPC_ADDR: 0.0.0.0:9301
+      COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
+
+      COLLABORATION_APP_NAME: Collabora
+      COLLABORATION_APP_PRODUCT: Collabora
+      COLLABORATION_APP_ADDR: ${COLLABORA_FQDN}
+      COLLABORATION_APP_ICON: ${COLLABORA_FQDN}/favicon.ico
+      COLLABORATION_APP_INSECURE: "true"
+
+      COLLABORATION_WOPI_SRC: ${COLLABORATION_FQDN}
+
+      COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "true"
+      COLLABORATION_LOG_LEVEL: info
+
+      OC_URL: ${OPENCLOUD_FQDN}
+    networks:
+      - frontend
+      - backend
+
+  opencloud-collabora:
+    image: collabora/code:latest
+    container_name: opencloud-collabora
+    restart: unless-stopped
+    environment:
+      aliasgroup1: ${OPENCLOUD_FQDN}:443
+      username: admin
+      password: ${COLLABORA_PASSWORD}
+      dictionaries: en it
+      extra_params: --o:ssl.enable=true --o:ssl.termination=false
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    cap_add:
+      - MKNOD
+    tty: true
+    networks:
+      - frontend
+      - backend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
+  backend:
