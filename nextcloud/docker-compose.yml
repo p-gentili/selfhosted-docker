@@ -32,7 +32,7 @@ services:
     links:
       - nextcloud-db
     networks:
-      - frontend 
+      - caddy_nextcloud
       - backend
 
   redis:
@@ -76,11 +76,11 @@ services:
     restart: unless-stopped
     networks:
       - backend
-      - frontend
+      - caddy_nextcloud
 
 networks:
-  frontend:
-    name: frontend
+  caddy_nextcloud:
+    name: caddy_nextcloud
     external: true
   backend:
 

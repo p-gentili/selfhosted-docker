@@ -7,9 +7,9 @@ services:
       - ./data:/data
     restart: unless-stopped
     networks:
-      - frontend 
+      - caddy_komga
 
 networks:
-  frontend:
-    name: frontend
+  caddy_komga:
+    name: caddy_komga
     external: true

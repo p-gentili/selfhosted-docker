@@ -8,7 +8,7 @@ services:
       - /media/external/media:/media
     restart: 'unless-stopped'
     networks:
-      - frontend 
+      - caddy_jellyfin
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
       - /dev/dri/card1:/dev/dri/card0
@@ -16,6 +16,6 @@ services:
       - "109"
 
 networks:
-  frontend:
-    name: frontend
+  caddy_jellyfin:
+    name: caddy_jellyfin
     external: true

@@ -7,11 +7,11 @@ services:
       - ./data:/datastore
     restart: unless-stopped
     networks:
-      - frontend 
+      - caddy_changedetection
     env_file:
       - .env
 
 networks:
-  frontend:
-    name: frontend
+  caddy_changedetection:
+    name: caddy_changedetection
     external: true

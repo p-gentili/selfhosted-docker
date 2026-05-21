@@ -19,7 +19,7 @@ services:
     healthcheck:
       disable: false
     networks:
-      - frontend
+      - caddy_immich
       - backend
 
   immich-machine-learning:
@@ -70,7 +70,7 @@ volumes:
   model-cache:
 
 networks:
-  frontend:
-    name: frontend
+  caddy_immich:
+    name: caddy_immich
     external: true
   backend:

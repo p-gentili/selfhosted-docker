@@ -40,14 +40,14 @@ services:
       PAPERLESS_DBHOST: db
     networks:
       - backend
-      - frontend
+      - caddy_paperless
 
 volumes:
   pgdata:
   redisdata:
 
 networks:
-  frontend:
-    name: frontend
+  caddy_paperless:
+    name: caddy_paperless
     external: true
   backend:

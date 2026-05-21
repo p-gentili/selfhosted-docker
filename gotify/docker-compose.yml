@@ -7,10 +7,10 @@ services:
     volumes:
       - "./data:/app/data"
     networks:
-      - frontend 
+      - caddy_gotify
     restart: 'unless-stopped'
 
 networks:
-  frontend:
-    name: frontend
+  caddy_gotify:
+    name: caddy_gotify
     external: true

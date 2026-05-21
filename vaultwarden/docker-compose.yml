@@ -9,9 +9,9 @@ services:
     env_file:
       - .env
     networks:
-      - frontend 
+      - caddy_vaultwarden
 
 networks:
-  frontend:
-    name: frontend
+  caddy_vaultwarden:
+    name: caddy_vaultwarden
     external: true

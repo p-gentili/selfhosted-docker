@@ -8,9 +8,9 @@ services:
       - .env
     restart: unless-stopped
     networks:
-      - frontend 
+      - caddy_linkding
 
 networks:
-  frontend:
-    name: frontend
+  caddy_linkding:
+    name: caddy_linkding
     external: true

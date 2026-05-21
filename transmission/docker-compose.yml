@@ -45,9 +45,9 @@ services:
       - UPDATER_PERIOD=
     restart: unless-stopped
     networks:
-      - frontend
+      - caddy_transmission
 
 networks:
-  frontend:
-    name: frontend
+  caddy_transmission:
+    name: caddy_transmission
     external: true

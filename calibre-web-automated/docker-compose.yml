@@ -24,10 +24,10 @@ services:
       - ./plugins:/config/.config/calibre/plugins
     restart: unless-stopped
     networks:
-      - frontend
+      - caddy_calibre
 
 networks:
-  frontend:
-    name: frontend
+  caddy_calibre:
+    name: caddy_calibre
     external: true
   backend:
