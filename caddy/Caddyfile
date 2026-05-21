@@ -133,3 +133,27 @@ auth.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+opencloud.{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy opencloud:9200 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+collaboration.{$DOMAIN} {
+	reverse_proxy opencloud-collaboration:9300 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+collabora.{$DOMAIN} {
+	reverse_proxy opencloud-collabora:9980 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
