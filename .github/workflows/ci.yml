@@ -11,13 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate every per-stack docker-compose.yml
+      - name: Validate every per-stack compose file
         run: |
           set -e
           failed=0
           shopt -s nullglob
-          for compose in */docker-compose.yml; do
-            dir=$(dirname "$compose")
+          # docker compose auto-discovers any of these four names — match the
+          # same set so renaming a stack from .yml to .yaml doesn't silently
+          # drop it from CI. Iterate unique directories.
+          mapfile -t dirs < <(
+            printf '%s\n' \
+              */docker-compose.yml \
+              */docker-compose.yaml \
+              */compose.yml \
+              */compose.yaml \
+            | xargs -I{} dirname {} | sort -u
+          )
+          for dir in "${dirs[@]}"; do
             echo "::group::$dir"
             pushd "$dir" >/dev/null
             # Compose needs a .env to resolve ${VAR} references; the sample
@@ -30,7 +40,7 @@ jobs:
               fi
             fi
             if ! docker compose config --quiet; then
-              echo "::error file=$compose::docker compose config failed"
+              echo "::error file=$dir::docker compose config failed"
               failed=1
             fi
             popd >/dev/null
