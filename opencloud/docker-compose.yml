@@ -13,6 +13,7 @@ services:
       OC_INSECURE: "false"
       PROXY_TLS: "false"
       PROXY_HTTP_ADDR: 0.0.0.0:9200
+      PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
 
       # Initial admin (used only if no admin exists yet)
       IDM_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
