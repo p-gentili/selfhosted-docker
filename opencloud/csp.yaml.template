@@ -1,0 +1,42 @@
+directives:
+  child-src:
+    - "'self'"
+  connect-src:
+    - "'self'"
+    - ${OIDC_ORIGIN}
+  default-src:
+    - "'none'"
+  font-src:
+    - "'self'"
+  frame-ancestors:
+    - "'self'"
+  frame-src:
+    - "'self'"
+    - ${OIDC_ORIGIN}
+    - blob:
+  img-src:
+    - "'self'"
+    - ${OIDC_ORIGIN}
+    - data:
+    - blob:
+  manifest-src:
+    - "'self'"
+  media-src:
+    - "'self'"
+  object-src:
+    - "'self'"
+  script-src:
+    - "'self'"
+    - 'unsafe-inline'
+    - 'unsafe-eval'
+  script-src-attr:
+    - "'none'"
+  style-src:
+    - "'self'"
+    - 'unsafe-inline'
+  worker-src:
+    - "'self'"
+    - blob:
+  form-action:
+    - "'self'"
+    - ${OIDC_ORIGIN}
