@@ -58,6 +58,20 @@ context and can't emit a CORS `Access-Control-Allow-Origin` header for the
 Web origin. The per-app discovery endpoint matches Origin against that
 provider's redirect URIs and emits CORS correctly.
 
+### Why `PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD=none`
+
+OCIS would normally verify JWT signatures locally by deriving the JWKS URL
+from `<OC_OIDC_ISSUER>/.well-known/openid-configuration`. That can't work
+here because Authentik intentionally returns 404 for the root `.well-known`
+even when providers use "Same as global issuer" mode — per Authentik's
+maintainers, that mode is only meant for clients that validate `iss` as a
+string without using discovery. Setting the verify method to `none` makes
+OCIS validate each token by calling Authentik's userinfo endpoint instead.
+The trade-off is one extra HTTP round trip per request and reliance on the
+userinfo endpoint (rather than a local signature check) to reject revoked
+tokens. This is the OCIS-recommended workaround for the multi-provider
+Authentik scenario.
+
 ### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
 in OpenCloud creates a local user record automatically. The `preferred_username`
