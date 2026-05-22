@@ -22,20 +22,41 @@ no `occ`-style post-start CLI commands.
 
 ### Prerequisites
 - Authentik is running at `https://auth.YOURDOMAIN`
-- An OAuth2/OpenID **provider** and **application** named `opencloud` exist in
-  Authentik. The provider must be configured as:
-  - **Client type: Public** — the OpenCloud Web UI is a browser SPA that
-    authenticates with PKCE only; a confidential client will fail token
-    exchange with `invalid_client`.
-  - **Authorization flow: implicit consent** —
-    `default-provider-authorization-implicit-consent`. Explicit consent
-    breaks silent token renewal in hidden iframes.
-  - **Redirect URIs** (strict mode):
+- **Two** OAuth2/OpenID providers + applications exist in Authentik — one per
+  client, because the Web SPA and the iOS app have different redirect URI
+  schemes that can't share a single provider in strict mode:
+  - `opencloud` — for the Web SPA. Redirect URIs (strict mode):
     - `https://opencloud.YOURDOMAIN/oidc-callback.html`
     - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
     - `https://opencloud.YOURDOMAIN/`
-- Copy the **Client ID** into `.env` as `OIDC_CLIENT_ID`. No client secret is
-  needed (or used).
+  - `opencloud-ios` — for the iOS app. Redirect URI (strict mode):
+    - `oc://ios.opencloud.eu`
+
+  Both providers must use:
+  - **Client type: Public** — both clients authenticate with PKCE only.
+    Confidential clients fail token exchange with `invalid_client`.
+  - **Authorization flow: implicit consent** —
+    `default-provider-authorization-implicit-consent`. Explicit consent
+    breaks silent token renewal in hidden iframes.
+  - **Issuer mode: Same as global issuer** — both providers must emit the
+    same `iss` claim (`https://auth.YOURDOMAIN/`). OpenCloud's
+    `OC_OIDC_ISSUER` validates against this single value, so a user logging
+    in via either client lands as the same account.
+
+- Copy the Web provider's **Client ID** into `.env` as `OIDC_CLIENT_ID`. No
+  client secret is needed. The iOS Client ID is configured inside the app and
+  doesn't appear in this stack's `.env`.
+
+### Why two metadata URLs in .env
+
+`OIDC_ISSUER_URL` is the **global** Authentik URL (`https://auth.YOURDOMAIN/`)
+— what OpenCloud validates the JWT `iss` claim against. `OIDC_WEB_METADATA_URL`
+is the **per-application** discovery URL that the browser SPA fetches. They
+can't be the same: Authentik has no global `/.well-known/openid-configuration`
+endpoint (it 404s), and even if it did, a global endpoint has no provider
+context and can't emit a CORS `Access-Control-Allow-Origin` header for the
+Web origin. The per-app discovery endpoint matches Origin against that
+provider's redirect URIs and emits CORS correctly.
 
 ### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
