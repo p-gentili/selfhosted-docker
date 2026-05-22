@@ -4,6 +4,7 @@ directives:
   connect-src:
     - "'self'"
     - ${OIDC_ORIGIN}
+    - ${COLLABORA_FQDN}
   default-src:
     - "'none'"
   font-src:
@@ -13,10 +14,12 @@ directives:
   frame-src:
     - "'self'"
     - ${OIDC_ORIGIN}
+    - ${COLLABORA_FQDN}
     - "blob:"
   img-src:
     - "'self'"
     - ${OIDC_ORIGIN}
+    - ${COLLABORA_FQDN}
     - "data:"
     - "blob:"
   manifest-src:
@@ -40,3 +43,4 @@ directives:
   form-action:
     - "'self'"
     - ${OIDC_ORIGIN}
+    - ${COLLABORA_FQDN}
