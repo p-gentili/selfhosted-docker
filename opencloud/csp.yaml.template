@@ -13,12 +13,12 @@ directives:
   frame-src:
     - "'self'"
     - ${OIDC_ORIGIN}
-    - blob:
+    - "blob:"
   img-src:
     - "'self'"
     - ${OIDC_ORIGIN}
-    - data:
-    - blob:
+    - "data:"
+    - "blob:"
   manifest-src:
     - "'self'"
   media-src:
@@ -36,7 +36,7 @@ directives:
     - 'unsafe-inline'
   worker-src:
     - "'self'"
-    - blob:
+    - "blob:"
   form-action:
     - "'self'"
     - ${OIDC_ORIGIN}
