@@ -142,7 +142,7 @@ opencloud.{$DOMAIN} {
 }
 
 collaboration.{$DOMAIN} {
-	reverse_proxy opencloud-collaboration:9300 {
+	reverse_proxy opencloud:9300 {
 		header_up X-Real-IP {remote_host}
 	}
 }
