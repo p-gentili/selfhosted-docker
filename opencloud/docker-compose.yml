@@ -19,7 +19,7 @@ services:
       IDM_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
       IDM_CREATE_DEMO_USERS: "false"
 
-      # External OIDC via Authentik for the Web SPA (Public client + PKCE).
+      # External OIDC via Authentik (Public client + PKCE, shared by Web and iOS).
       OC_OIDC_ISSUER: ${OIDC_ISSUER_URL}
       WEB_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
       WEB_OIDC_METADATA_URL: ${OIDC_ISSUER_URL}.well-known/openid-configuration
@@ -27,13 +27,6 @@ services:
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       PROXY_USER_OIDC_CLAIM: preferred_username
       PROXY_USER_CS3_CLAIM: username
-      # Enable HTTP basic auth alongside OIDC, so the iOS app (and other
-      # non-browser clients) can authenticate via username + app password
-      # against OpenCloud's local IDM. iOS does not use OIDC in this stack
-      # because Authentik's "Same as global issuer" mode would be required to
-      # share an `iss` with the Web SPA, and that mode disables discovery —
-      # see README for the full rationale.
-      PROXY_ENABLE_BASIC_AUTH: "true"
 
       # Run the WOPI bridge as a sub-process so it shares 127.0.0.1 with the
       # gateway/storage services. The alternative (separate container) requires
