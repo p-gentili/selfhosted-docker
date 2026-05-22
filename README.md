@@ -26,6 +26,11 @@ graph TD
             nextcloud-code[Collabora]
             nextcloud-db[Database]
         end
+        subgraph OpenCloud Network
+            opencloud[OpenCloud]
+            opencloud-collaboration[Collaboration WOPI]
+            opencloud-collabora[Collabora]
+        end
         subgraph Immich Network
             immich[immich]
             immich-redis[Redis]
@@ -43,6 +48,7 @@ graph TD
   caddy --> vaultwarden
   caddy --> jellyfin
   caddy --> nextcloud
+  caddy --> opencloud
   caddy --> immich
   caddy --> transmission
   caddy --> linkding
