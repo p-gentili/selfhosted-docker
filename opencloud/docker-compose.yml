@@ -19,23 +19,21 @@ services:
       IDM_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
       IDM_CREATE_DEMO_USERS: "false"
 
-      # External OIDC via Authentik (Public client + PKCE — no secret needed)
+      # External OIDC via Authentik for the Web SPA (Public client + PKCE).
       OC_OIDC_ISSUER: ${OIDC_ISSUER_URL}
       WEB_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
-      WEB_OIDC_METADATA_URL: ${OIDC_WEB_METADATA_URL}
+      WEB_OIDC_METADATA_URL: ${OIDC_ISSUER_URL}.well-known/openid-configuration
       PROXY_AUTOPROVISION_ACCOUNTS: "true"
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       PROXY_USER_OIDC_CLAIM: preferred_username
       PROXY_USER_CS3_CLAIM: username
-      # Validate tokens by calling Authentik's userinfo endpoint instead of
-      # locally verifying the JWT signature. Required because OC_OIDC_ISSUER
-      # points at the Authentik root (so `iss` is shared across the web and
-      # iOS providers configured with "Same as global issuer" mode), and
-      # Authentik does not serve /.well-known/openid-configuration at the
-      # root — so OCIS can't auto-discover the JWKS URL. The userinfo path
-      # works regardless of discovery and is the documented OCIS workaround
-      # for the multi-provider Authentik setup (opencloud-eu#835).
-      PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD: none
+      # Enable HTTP basic auth alongside OIDC, so the iOS app (and other
+      # non-browser clients) can authenticate via username + app password
+      # against OpenCloud's local IDM. iOS does not use OIDC in this stack
+      # because Authentik's "Same as global issuer" mode would be required to
+      # share an `iss` with the Web SPA, and that mode disables discovery —
+      # see README for the full rationale.
+      PROXY_ENABLE_BASIC_AUTH: "true"
 
       # Run the WOPI bridge as a sub-process so it shares 127.0.0.1 with the
       # gateway/storage services. The alternative (separate container) requires
