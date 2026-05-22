@@ -68,6 +68,8 @@ services:
       COLLABORATION_LOG_LEVEL: info
 
       OC_URL: ${OPENCLOUD_FQDN}
+    volumes:
+      - ./config:/etc/opencloud:ro
     networks:
       - frontend
       - backend
