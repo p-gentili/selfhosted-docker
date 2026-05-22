@@ -23,9 +23,19 @@ no `occ`-style post-start CLI commands.
 ### Prerequisites
 - Authentik is running at `https://auth.YOURDOMAIN`
 - An OAuth2/OpenID **provider** and **application** named `opencloud` exist in
-  Authentik (slug = `opencloud`, redirect URI = `https://opencloud.YOURDOMAIN/oidc-callback`)
-- You have copied the **Client ID** and **Client Secret** from the provider into
-  `.env` as `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET`
+  Authentik. The provider must be configured as:
+  - **Client type: Public** — the OpenCloud Web UI is a browser SPA that
+    authenticates with PKCE only; a confidential client will fail token
+    exchange with `invalid_client`.
+  - **Authorization flow: implicit consent** —
+    `default-provider-authorization-implicit-consent`. Explicit consent
+    breaks silent token renewal in hidden iframes.
+  - **Redirect URIs** (strict mode):
+    - `https://opencloud.YOURDOMAIN/oidc-callback.html`
+    - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
+    - `https://opencloud.YOURDOMAIN/`
+- Copy the **Client ID** into `.env` as `OIDC_CLIENT_ID`. No client secret is
+  needed (or used).
 
 ### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
