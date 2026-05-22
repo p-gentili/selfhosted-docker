@@ -15,69 +15,81 @@ the Nextcloud stack). Office editing flows through OpenCloud's built-in
 collaboration service (the WOPI bridge), which is a second container running the
 same `opencloud` image with a different command.
 
-## OIDC SSO via Authentik
+## Authentication
 
-OpenCloud is configured for external OIDC purely through environment variables —
-no `occ`-style post-start CLI commands.
+The Web SPA uses **OIDC SSO via Authentik**. The iOS app uses **basic auth +
+app passwords** against OpenCloud's local IDM. The two clients use different
+auth paths intentionally — see "Why iOS doesn't use OIDC" below.
 
-### Prerequisites
+### OIDC SSO via Authentik (Web only)
+
+Configured purely through environment variables — no `occ`-style post-start
+CLI commands.
+
+#### Prerequisites
 - Authentik is running at `https://auth.YOURDOMAIN`
-- **Two** OAuth2/OpenID providers + applications exist in Authentik — one per
-  client, because the Web SPA and the iOS app have different redirect URI
-  schemes that can't share a single provider in strict mode:
-  - `opencloud` — for the Web SPA. Redirect URIs (strict mode):
-    - `https://opencloud.YOURDOMAIN/oidc-callback.html`
-    - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
-    - `https://opencloud.YOURDOMAIN/`
-  - `opencloud-ios` — for the iOS app. Redirect URI (strict mode):
-    - `oc://ios.opencloud.eu`
-
-  Both providers must use:
-  - **Client type: Public** — both clients authenticate with PKCE only.
-    Confidential clients fail token exchange with `invalid_client`.
+- One OAuth2/OpenID provider + application named `opencloud` exists in
+  Authentik:
+  - **Client type: Public** — the Web SPA authenticates with PKCE only.
+    A confidential client fails token exchange with `invalid_client`.
   - **Authorization flow: implicit consent** —
     `default-provider-authorization-implicit-consent`. Explicit consent
     breaks silent token renewal in hidden iframes.
-  - **Issuer mode: Same as global issuer** — both providers must emit the
-    same `iss` claim (`https://auth.YOURDOMAIN/`). OpenCloud's
-    `OC_OIDC_ISSUER` validates against this single value, so a user logging
-    in via either client lands as the same account.
+  - **Issuer mode: Each provider has different issuer** (per-provider).
+    Required so `iss` matches the per-application discovery URL — that's
+    the only URL on Authentik that actually serves `.well-known/openid-configuration`.
+    "Same as global issuer" mode would set `iss` to the Authentik root,
+    where Authentik intentionally 404s discovery and breaks OCIS server-side
+    JWKS auto-discovery.
+  - **Redirect URIs** (strict mode):
+    - `https://opencloud.YOURDOMAIN/oidc-callback.html`
+    - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
+    - `https://opencloud.YOURDOMAIN/`
+- Copy the **Client ID** into `.env` as `OIDC_CLIENT_ID`. No client secret is
+  needed (or used).
 
-- Copy the Web provider's **Client ID** into `.env` as `OIDC_CLIENT_ID`. No
-  client secret is needed. The iOS Client ID is configured inside the app and
-  doesn't appear in this stack's `.env`.
-
-### Why two metadata URLs in .env
-
-`OIDC_ISSUER_URL` is the **global** Authentik URL (`https://auth.YOURDOMAIN/`)
-— what OpenCloud validates the JWT `iss` claim against. `OIDC_WEB_METADATA_URL`
-is the **per-application** discovery URL that the browser SPA fetches. They
-can't be the same: Authentik has no global `/.well-known/openid-configuration`
-endpoint (it 404s), and even if it did, a global endpoint has no provider
-context and can't emit a CORS `Access-Control-Allow-Origin` header for the
-Web origin. The per-app discovery endpoint matches Origin against that
-provider's redirect URIs and emits CORS correctly.
-
-### Why `PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD=none`
-
-OCIS would normally verify JWT signatures locally by deriving the JWKS URL
-from `<OC_OIDC_ISSUER>/.well-known/openid-configuration`. That can't work
-here because Authentik intentionally returns 404 for the root `.well-known`
-even when providers use "Same as global issuer" mode — per Authentik's
-maintainers, that mode is only meant for clients that validate `iss` as a
-string without using discovery. Setting the verify method to `none` makes
-OCIS validate each token by calling Authentik's userinfo endpoint instead.
-The trade-off is one extra HTTP round trip per request and reliance on the
-userinfo endpoint (rather than a local signature check) to reject revoked
-tokens. This is the OCIS-recommended workaround for the multi-provider
-Authentik scenario.
-
-### How it works
+#### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
 in OpenCloud creates a local user record automatically. The `preferred_username`
 claim is used as the OpenCloud username, matching the convention used in the
 Nextcloud stack — so as long as Authentik usernames are stable, this is the
 identifier that will tie back to a user's data over time.
+
+### iOS app: basic auth + app passwords
+
+`PROXY_ENABLE_BASIC_AUTH=true` is set so the iOS app can authenticate via
+HTTP basic auth against OpenCloud's local IDM. Onboarding flow per user:
+
+1. User signs in to the Web UI once via OIDC — this auto-provisions the local
+   account.
+2. From the Web UI, the user creates an **app password** for their iOS device.
+3. In the iOS app, the user adds the OpenCloud server and authenticates with
+   their username + that app password.
+
+#### Why iOS doesn't use OIDC
+
+Sharing a single Authentik OIDC provider between the Web SPA and the iOS app
+isn't practical:
+
+- The two clients need different redirect URIs (`https://opencloud.../...` vs
+  `oc://ios.opencloud.eu`), so they can't share strict-mode URI lists *and*
+  the same `client_id` — the iOS app's `client_id` defaults to `OpenCloudIOS`
+  (hardcoded in the SDK, overridable only at build time or via MDM).
+- Using two separate Authentik providers requires both to emit the same `iss`
+  so OCIS can validate tokens from either, which means "Same as global issuer"
+  mode. But that mode disables Authentik's per-app discovery semantics at the
+  root URL (404), and OCIS depends on discovery for both JWKS and userinfo
+  endpoint lookup. Neither `PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD=none` nor
+  the various OCIS proxy knobs let server-side validation bypass discovery
+  entirely — confirmed by the OCIS proxy source. The Authentik maintainers'
+  explicit position: "Same as global" is only for clients that validate `iss`
+  as a string without performing discovery.
+- The remaining workaround — proxying the Authentik root's `.well-known` to a
+  per-app endpoint via Caddy — couples a shared-identity service to one
+  downstream stack's config, which we don't want.
+
+Basic auth + app passwords is the standard ownCloud/OpenCloud iOS pattern and
+sidesteps the entire problem; the iOS device never needs to talk to Authentik.
 
 ### Recovering the initial admin
 The `INITIAL_ADMIN_PASSWORD` env var only takes effect the very first time the
