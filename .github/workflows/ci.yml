@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  compose-validate:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate every per-stack compose file
+        run: |
+          set -e
+          failed=0
+          shopt -s nullglob
+          # docker compose auto-discovers any of these four names — match the
+          # same set so renaming a stack from .yml to .yaml doesn't silently
+          # drop it from CI. Iterate unique directories.
+          mapfile -t dirs < <(
+            printf '%s\n' \
+              */docker-compose.yml \
+              */docker-compose.yaml \
+              */compose.yml \
+              */compose.yaml \
+            | xargs -I{} dirname {} | sort -u
+          )
+          for dir in "${dirs[@]}"; do
+            echo "::group::$dir"
+            pushd "$dir" >/dev/null
+            # Compose needs a .env to resolve ${VAR} references; the sample
+            # files in this repo are the source of truth for what vars exist.
+            if [ ! -f .env ]; then
+              if [ -f .env.sample ]; then
+                cp .env.sample .env
+              elif [ -f .env.example ]; then
+                cp .env.example .env
+              fi
+            fi
+            if ! docker compose config --quiet; then
+              echo "::error file=$dir::docker compose config failed"
+              failed=1
+            fi
+            popd >/dev/null
+            echo "::endgroup::"
+          done
+          exit $failed
+
+  caddyfile-validate:
+    name: caddy validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Caddyfile
+        run: |
+          docker run --rm \
+            -v "$PWD/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            -e DOMAIN=example.com \
+            -e EMAIL=ci@example.com \
+            caddy:2 \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: --severity=warning
