@@ -63,7 +63,7 @@ services:
       # server_name pins the URLs Collabora advertises in /hosting/discovery.
       # Without it, the URLs are derived from the Host header, which would be
       # the internal hostname when collaboration fetches discovery directly.
-      extra_params: --o:ssl.enable=true --o:ssl.termination=false --o:server_name=${COLLABORA_HOST}
+      extra_params: --o:ssl.enable=true --o:ssl.termination=false --o:server_name=${COLLABORA_HOST} --o:net.frame_ancestors=${OPENCLOUD_HOST}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
