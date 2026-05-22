@@ -13,6 +13,9 @@ mkdir -p $DIRNAME/config $DIRNAME/data $DIRNAME/collabora
 # returns 500 ("Invalid timestamp") on every WOPI request.
 if [ ! -f "$DIRNAME/collabora/proof_key" ]; then
     ssh-keygen -t rsa -b 2048 -N "" -m PEM -f "$DIRNAME/collabora/proof_key"
+    # Collabora runs as a non-root user inside the container and can't read
+    # ssh-keygen's default 0600 file (owned by the host user that ran init).
+    chmod 644 "$DIRNAME/collabora/proof_key"
 fi
 
 # Render CSP config: allow the OIDC issuer and Collabora origins in
