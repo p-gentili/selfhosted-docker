@@ -28,48 +28,23 @@ services:
       PROXY_USER_OIDC_CLAIM: preferred_username
       PROXY_USER_CS3_CLAIM: username
 
-      # Service discovery for the external collaboration container
-      MICRO_REGISTRY: nats-js-kv
-      MICRO_REGISTRY_ADDRESS: opencloud:9233
-      NATS_NATS_HOST: 0.0.0.0
-      NATS_NATS_PORT: "9233"
+      # Run the WOPI bridge as a sub-process so it shares 127.0.0.1 with the
+      # gateway/storage services. The alternative (separate container) requires
+      # exposing every internal gRPC port on 0.0.0.0 + routable registry
+      # addresses; not worth it for a single-host deployment.
+      OC_ADD_RUN_SERVICES: collaboration
+      COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
+      COLLABORATION_APP_NAME: Collabora
+      COLLABORATION_APP_PRODUCT: Collabora
+      # Reach Collabora directly over the docker network, not through Caddy.
+      COLLABORATION_APP_ADDR: https://opencloud-collabora:9980
+      COLLABORATION_APP_ICON: ${COLLABORA_FQDN}/favicon.ico
+      COLLABORATION_APP_INSECURE: "true"
+      COLLABORATION_WOPI_SRC: ${COLLABORATION_FQDN}
+      COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "true"
     volumes:
       - ./config:/etc/opencloud
       - ./data:/var/lib/opencloud
-    networks:
-      - frontend
-      - backend
-
-  opencloud-collaboration:
-    image: opencloudeu/opencloud:latest
-    container_name: opencloud-collaboration
-    restart: unless-stopped
-    depends_on:
-      - opencloud
-      - opencloud-collabora
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["opencloud collaboration server"]
-    environment:
-      MICRO_REGISTRY: nats-js-kv
-      MICRO_REGISTRY_ADDRESS: opencloud:9233
-
-      COLLABORATION_GRPC_ADDR: 0.0.0.0:9301
-      COLLABORATION_HTTP_ADDR: 0.0.0.0:9300
-
-      COLLABORATION_APP_NAME: Collabora
-      COLLABORATION_APP_PRODUCT: Collabora
-      COLLABORATION_APP_ADDR: ${COLLABORA_FQDN}
-      COLLABORATION_APP_ICON: ${COLLABORA_FQDN}/favicon.ico
-      COLLABORATION_APP_INSECURE: "true"
-
-      COLLABORATION_WOPI_SRC: ${COLLABORATION_FQDN}
-
-      COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "true"
-      COLLABORATION_LOG_LEVEL: info
-
-      OC_URL: ${OPENCLOUD_FQDN}
-    volumes:
-      - ./config:/etc/opencloud:ro
     networks:
       - frontend
       - backend
@@ -79,11 +54,16 @@ services:
     container_name: opencloud-collabora
     restart: unless-stopped
     environment:
-      aliasgroup1: ${OPENCLOUD_FQDN}:443
+      # WOPI host allowlist — must match the collaboration server's public
+      # origin (where browsers send WOPISrc from), not OpenCloud's.
+      aliasgroup1: ${COLLABORATION_FQDN}:443
       username: admin
       password: ${COLLABORA_PASSWORD}
       dictionaries: en it
-      extra_params: --o:ssl.enable=true --o:ssl.termination=false
+      # server_name pins the URLs Collabora advertises in /hosting/discovery.
+      # Without it, the URLs are derived from the Host header, which would be
+      # the internal hostname when collaboration fetches discovery directly.
+      extra_params: --o:ssl.enable=true --o:ssl.termination=false --o:server_name=${COLLABORA_HOST}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
