@@ -30,13 +30,13 @@ directives:
     - "'self'"
   script-src:
     - "'self'"
-    - 'unsafe-inline'
-    - 'unsafe-eval'
+    - "'unsafe-inline'"
+    - "'unsafe-eval'"
   script-src-attr:
-    - "'none'"
+    - "'unsafe-inline'"
   style-src:
     - "'self'"
-    - 'unsafe-inline'
+    - "'unsafe-inline'"
   worker-src:
     - "'self'"
     - "blob:"
