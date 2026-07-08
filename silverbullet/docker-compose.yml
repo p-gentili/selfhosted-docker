@@ -1,0 +1,18 @@
+services:
+  silverbullet:
+    image: ghcr.io/silverbulletmd/silverbullet:v2
+    container_name: silverbullet
+    environment:
+      TZ: 'Europe/Rome'
+      # Built-in login, format: username:password — set in .env
+      SB_USER: ${SB_USER}
+    volumes:
+      - ./data:/space
+    restart: unless-stopped
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
