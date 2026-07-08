@@ -133,3 +133,9 @@ auth.{$DOMAIN} {
 		header_up X-Real-IP {remote_host}
 	}
 }
+
+notes.{$DOMAIN} {
+	reverse_proxy silverbullet:3000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
