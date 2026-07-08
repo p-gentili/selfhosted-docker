@@ -1,0 +1,16 @@
+services:
+  silverbullet:
+    image: ghcr.io/silverbulletmd/silverbullet:v2
+    container_name: silverbullet
+    environment:
+      TZ: 'Europe/Rome'
+    volumes:
+      - ./data:/space
+    restart: unless-stopped
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
