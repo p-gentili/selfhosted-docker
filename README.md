@@ -21,6 +21,7 @@ graph TD
         freshrss[FreshRSS]
         mealy[Mealy]
         changedetection[changedetection.io]
+        kosync[KOReader Sync]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -50,6 +51,7 @@ graph TD
   caddy --> freshrss
   caddy --> mealy
   caddy --> changedetection
+  caddy --> kosync
 ```
 
 ## Install
