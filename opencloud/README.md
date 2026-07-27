@@ -24,10 +24,10 @@ no `occ`-style post-start CLI commands.
 ### Prerequisites
 - Authentik is running at `https://auth.YOURDOMAIN`
 - One OAuth2/OpenID provider + application exists in Authentik:
-  - **Client ID: `OpenCloudIOS`** — the iOS SDK hardcodes this as the
-    fallback when Dynamic Client Registration is disabled. The Web SPA
-    reuses the same Client ID so a single provider serves both clients.
-    Authentik treats the value as an opaque string.
+  - **Client ID: whatever Authentik generated** — no specific value is
+    required. The Web SPA and the iOS app both use it; see "How native
+    clients learn their client_id" below for why iOS doesn't need a
+    special name.
   - **Client type: Public** — both clients authenticate with PKCE only.
     A confidential client fails token exchange with `invalid_client`.
   - **Authorization flow: implicit consent** —
@@ -39,16 +39,43 @@ no `occ`-style post-start CLI commands.
     "Same as global issuer" mode would set `iss` to the Authentik root,
     where Authentik intentionally 404s discovery and breaks OCIS server-side
     JWKS auto-discovery.
-  - **Dynamic Client Registration: disabled** (default). Required so the
-    iOS SDK falls back to the static `OpenCloudIOS` client_id rather than
-    self-registering with a new dynamic ID under the parent provider.
   - **Redirect URIs** (strict mode):
     - `https://opencloud.YOURDOMAIN/oidc-callback.html`
     - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
     - `https://opencloud.YOURDOMAIN/`
-    - `oc://ios.opencloud.eu`
-- Copy the **Client ID** (`OpenCloudIOS`) into `.env` as `OIDC_CLIENT_ID`. No
-  client secret is needed (or used).
+    - `oc://ios.opencloud.eu` — the iOS app's custom URL scheme. This one
+      is compiled into the app and is *not* discoverable, so it has to be
+      registered by hand.
+- Copy the **Client ID** into `.env` as `OIDC_CLIENT_ID`. No client secret is
+  needed (or used).
+
+### How native clients learn their client_id
+
+The Web SPA reads its client_id from `config.json`, but the iOS, Android, and
+desktop apps don't: they ask OpenCloud's WebFinger service, at
+`/.well-known/webfinger?resource=<server>&platform=ios`. The response carries
+`http://opencloud.eu/ns/oidc/client_id` and `.../scopes` properties, and the
+app uses whatever it finds there (see upstream ADR 0003).
+
+Out of the box that answers with the literal string `OpenCloudIOS`. Authentik
+has no provider by that name, so the app sends an unknown client_id and — after
+the user has already typed their password — the login dies with *"The client
+identifier (client_id) is missing or invalid"*.
+
+`WEBFINGER_IOS_OIDC_CLIENT_ID` in `docker-compose.yml` overrides that default
+with the same client the Web SPA uses, so one Authentik provider serves both.
+This is the supported mechanism, and it is the reason the provider's Client ID
+can be any value: the server tells the app what to use.
+
+Note this is only necessary because Authentik does not implement OIDC Dynamic
+Client Registration — its discovery document has no `registration_endpoint`, so
+native apps cannot register themselves and must be pointed at a pre-registered
+client. That is the standard pattern for public native clients (RFC 8252): the
+client_id is not a secret, and PKCE provides the security.
+
+`WEBFINGER_ANDROID_OIDC_CLIENT_ID` and `WEBFINGER_DESKTOP_OIDC_CLIENT_ID`
+default to `OpenCloudAndroid` / `OpenCloudDesktop` and will fail the same way if
+those clients are ever used; they need the same treatment.
 
 ### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
