@@ -39,6 +39,12 @@ no `occ`-style post-start CLI commands.
     "Same as global issuer" mode would set `iss` to the Authentik root,
     where Authentik intentionally 404s discovery and breaks OCIS server-side
     JWKS auto-discovery.
+  - **Scopes**: `openid`, `profile`, `email`, and `offline_access` — all four
+    are Authentik's built-in mappings. `offline_access` is not attached by
+    default and is easy to miss: the Web SPA doesn't ask for it, but the
+    native clients do. Without it they log in fine and then get silently
+    signed out when the access token expires, because no refresh token is
+    ever issued.
   - **Redirect URIs** (strict mode):
     - `https://opencloud.YOURDOMAIN/oidc-callback.html`
     - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
