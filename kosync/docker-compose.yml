@@ -1,0 +1,23 @@
+services:
+  kosync:
+    image: koreader/kosync:latest
+    container_name: kosync
+    environment:
+      TZ: 'Europe/Rome'
+      # Whether KOReader clients may create new accounts. Keep disabled while
+      # the server is internet-facing; flip to true briefly to register. See README.
+      ENABLE_USER_REGISTRATION: ${ENABLE_USER_REGISTRATION:-false}
+    volumes:
+      # Sync data (reading progress) lives in the bundled Redis — this is the
+      # directory that matters for backups.
+      - ./data/redis:/var/lib/redis
+      - ./logs/app:/app/koreader-sync-server/logs
+      - ./logs/redis:/var/log/redis
+    restart: unless-stopped
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
