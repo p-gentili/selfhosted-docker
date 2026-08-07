@@ -35,6 +35,12 @@ services:
       # the app needs — and setting them here as a space-separated string makes
       # WebFinger advertise one joined scope instead of a list of four.
       WEBFINGER_IOS_OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      # App tokens, used by rclone (and any other non-browser client) to
+      # authenticate without a browser OIDC flow. The auth-app service already
+      # runs inside the single binary; this only makes the proxy accept the
+      # tokens it issues. Preferred over PROXY_ENABLE_BASIC_AUTH: tokens are
+      # per-client and individually revocable.
+      PROXY_ENABLE_APP_AUTH: "true"
       PROXY_AUTOPROVISION_ACCOUNTS: "true"
       PROXY_OIDC_REWRITE_WELLKNOWN: "true"
       PROXY_USER_OIDC_CLAIM: preferred_username
