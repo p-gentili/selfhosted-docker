@@ -1,6 +1,6 @@
 services:
   ghostfolio:
-    image: ghostfolio/ghostfolio:2
+    image: ghostfolio/ghostfolio:3
     container_name: ghostfolio
     restart: unless-stopped
     init: true
