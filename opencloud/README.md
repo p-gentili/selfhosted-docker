@@ -1,0 +1,112 @@
+# OpenCloud
+Official website: [https://opencloud.eu](https://opencloud.eu)
+
+Github: [https://github.com/opencloud-eu/opencloud](https://github.com/opencloud-eu/opencloud)
+
+OpenCloud is the OCIS-based successor to ownCloud. This stack runs in parallel
+with the existing Nextcloud deployment during migration; both are independent and
+share no containers, volumes, or databases.
+
+## Collabora CODE
+Official website: [https://www.collaboraonline.com/code/](https://www.collaboraonline.com/code/)
+
+This stack ships its own dedicated Collabora instance (separate from the one in
+the Nextcloud stack). Office editing flows through OpenCloud's built-in
+collaboration service (the WOPI bridge), which is a second container running the
+same `opencloud` image with a different command.
+
+## OIDC SSO via Authentik
+
+Both the Web SPA and the iOS app authenticate against the same single
+Authentik OAuth2 provider. Configured purely through environment variables —
+no `occ`-style post-start CLI commands.
+
+### Prerequisites
+- Authentik is running at `https://auth.YOURDOMAIN`
+- One OAuth2/OpenID provider + application exists in Authentik:
+  - **Client ID: whatever Authentik generated** — no specific value is
+    required. The Web SPA and the iOS app both use it; see "How native
+    clients learn their client_id" below for why iOS doesn't need a
+    special name.
+  - **Client type: Public** — both clients authenticate with PKCE only.
+    A confidential client fails token exchange with `invalid_client`.
+  - **Authorization flow: implicit consent** —
+    `default-provider-authorization-implicit-consent`. Explicit consent
+    breaks silent token renewal in hidden iframes.
+  - **Issuer mode: Each provider has different issuer** (per-provider).
+    Required so `iss` matches the per-application discovery URL — that's
+    the only URL on Authentik that actually serves `.well-known/openid-configuration`.
+    "Same as global issuer" mode would set `iss` to the Authentik root,
+    where Authentik intentionally 404s discovery and breaks OCIS server-side
+    JWKS auto-discovery.
+  - **Scopes**: `openid`, `profile`, `email`, and `offline_access` — all four
+    are Authentik's built-in mappings. `offline_access` is not attached by
+    default and is easy to miss: the Web SPA doesn't ask for it, but the
+    native clients do. Without it they log in fine and then get silently
+    signed out when the access token expires, because no refresh token is
+    ever issued.
+  - **Redirect URIs** (strict mode):
+    - `https://opencloud.YOURDOMAIN/oidc-callback.html`
+    - `https://opencloud.YOURDOMAIN/oidc-silent-redirect.html`
+    - `https://opencloud.YOURDOMAIN/`
+    - `oc://ios.opencloud.eu` — the iOS app's custom URL scheme. This one
+      is compiled into the app and is *not* discoverable, so it has to be
+      registered by hand.
+- Copy the **Client ID** into `.env` as `OIDC_CLIENT_ID`. No client secret is
+  needed (or used).
+
+### How native clients learn their client_id
+
+The Web SPA reads its client_id from `config.json`, but the iOS, Android, and
+desktop apps don't: they ask OpenCloud's WebFinger service, at
+`/.well-known/webfinger?resource=<server>&platform=ios`. The response carries
+`http://opencloud.eu/ns/oidc/client_id` and `.../scopes` properties, and the
+app uses whatever it finds there (see upstream ADR 0003).
+
+Out of the box that answers with the literal string `OpenCloudIOS`. Authentik
+has no provider by that name, so the app sends an unknown client_id and — after
+the user has already typed their password — the login dies with *"The client
+identifier (client_id) is missing or invalid"*.
+
+`WEBFINGER_IOS_OIDC_CLIENT_ID` in `docker-compose.yml` overrides that default
+with the same client the Web SPA uses, so one Authentik provider serves both.
+This is the supported mechanism, and it is the reason the provider's Client ID
+can be any value: the server tells the app what to use.
+
+Note this is only necessary because Authentik does not implement OIDC Dynamic
+Client Registration — its discovery document has no `registration_endpoint`, so
+native apps cannot register themselves and must be pointed at a pre-registered
+client. That is the standard pattern for public native clients (RFC 8252): the
+client_id is not a secret, and PKCE provides the security.
+
+`WEBFINGER_ANDROID_OIDC_CLIENT_ID` and `WEBFINGER_DESKTOP_OIDC_CLIENT_ID`
+default to `OpenCloudAndroid` / `OpenCloudDesktop` and will fail the same way if
+those clients are ever used; they need the same treatment.
+
+### How it works
+With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
+in OpenCloud creates a local user record automatically. The `preferred_username`
+claim is used as the OpenCloud username, matching the convention used in the
+Nextcloud stack — so as long as Authentik usernames are stable, this is the
+identifier that will tie back to a user's data over time.
+
+### Recovering the initial admin
+The `INITIAL_ADMIN_PASSWORD` env var only takes effect the very first time the
+stack comes up (when `opencloud init` runs). After that, change it through the
+web UI or with `docker exec opencloud opencloud idm`.
+
+## Backup considerations
+
+Unlike Nextcloud (MariaDB + filesystem), OpenCloud uses embedded storage
+(boltdb + files under `./data`). `pre-backup.sh` stops just the `opencloud`
+container so the data directory is consistent for snapshotting;
+`post-backup.sh` starts it again. Collabora and the collaboration service stay
+running — they are stateless.
+
+## Parallel-with-Nextcloud notes
+
+- OpenCloud lives on `opencloud.YOURDOMAIN`; Nextcloud stays on
+  `drive.YOURDOMAIN`. No conflicts.
+- Each stack has its own Collabora; the two never share a WOPI host.
+- When Nextcloud is eventually retired, this stack stands on its own — nothing
+  in `opencloud/` references the Nextcloud stack.
