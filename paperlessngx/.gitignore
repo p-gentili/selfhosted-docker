@@ -3,3 +3,4 @@ media
 export
 consume
 dump.sql.gz
+.env
