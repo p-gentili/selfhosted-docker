@@ -2,6 +2,11 @@ services:
   transmission:
     image: lscr.io/linuxserver/transmission:latest
     container_name: transmission
+    labels:
+      # Shares gluetun's network namespace, so watchtower must recreate gluetun
+      # first; without this it can start transmission before gluetun exists and
+      # the container dies with "joining network namespace: No such container".
+      - com.centurylinklabs.watchtower.depends-on=gluetun-transmission
     environment:
       - PUID=1000
       - PGID=1000
