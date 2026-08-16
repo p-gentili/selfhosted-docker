@@ -1,0 +1,23 @@
+services:
+  samba:
+    image: ghcr.io/servercontainers/samba:latest
+    container_name: samba_photos
+    restart: unless-stopped
+    ports:
+      - "${SMB_HOST_PORT:-445}:445"
+    environment:
+      # This image derives the account name from the variable name itself
+      # (ACCOUNT_<name> / UID_<name>). Compose only interpolates variables
+      # inside environment keys in this list form - the mapping form escapes
+      # them to a literal $${SMB_USER} - so the account, its password and
+      # "valid users" all stay driven by SMB_USER in .env.
+      #
+      # UID must match the owner of SMB_PHOTOS_DIR on the host, otherwise
+      # writes over SMB land as the wrong user or silently become read-only.
+      - "ACCOUNT_${SMB_USER:?SMB_USER must be set in .env}=${SMB_PASSWORD:?SMB_PASSWORD must be set in .env}"
+      - "UID_${SMB_USER}=${SMB_UID:-1000}"
+      - "SAMBA_VOLUME_CONFIG_photos=[photos]; path=/shares/photos; valid users = ${SMB_USER}; guest ok = no; read only = no; browseable = yes"
+    volumes:
+      - "${SMB_PHOTOS_DIR:-/media/external/photos}:/shares/photos"
+    cap_add:
+      - NET_ADMIN
