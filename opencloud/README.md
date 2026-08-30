@@ -124,6 +124,24 @@ warning at startup that `http_x_remote_user` is selected while listening on
 request without the header gets a 403, so the failure mode if it were ever
 exposed is closed rather than open.
 
+### Collections are keyed by opaque ID, not username
+
+The proxy sets `X-Remote-User` to the user's **opaque ID** — a UUID — not their
+username (`services/proxy/pkg/middleware/account_resolver.go`, hardcoded, no
+config option). Radicale uses that string as the collection root, so a user's
+calendars live at `/caldav/<uuid>/def-calendar/`, and Radicale's default
+`owner_only` rights backend returns **403** for a path under any other name.
+
+The practical consequence: **always use `https://opencloud.YOURDOMAIN` as the
+entry point and let discovery find the rest.** A URL built by hand from a
+username gets a 403. Clients PROPFIND `current-user-principal` and are handed
+the correct path automatically; that is the only supported way to find it.
+
+A corollary worth knowing before it bites: the opaque ID, not the username, is
+what ties a user to their collections. Deleting and recreating a user in
+OpenCloud issues a new ID and orphans the old data under the old UUID — it is
+still on disk in `./radicale-data`, but that user sees an empty account.
+
 `radicale.conf` sets `predefined_collections`, so the first authenticated
 request from a user creates `def-calendar` ("Personal Calendar") and
 `def-addressbook` ("Personal Address Book"). Without it a new user has no
@@ -183,35 +201,18 @@ docker exec -u www-data nextcloud php occ dav:list-addressbooks USERNAME
 
 ### 3. Pre-create the destination collections
 
-Radicale ships one calendar and one address book per user. vdirsyncer is
-unreliable at creating collections on Radicale, so make any extras yourself —
-one per Nextcloud calendar beyond the first:
+Radicale ships one calendar and one address book per user, and vdirsyncer is
+unreliable at creating collections on Radicale — so any extras need to exist
+first, one per Nextcloud calendar beyond the first.
 
-```bash
-# Calendar
-curl -u USERNAME:APP_TOKEN -X MKCALENDAR \
-    -H 'Content-Type: application/xml' \
-    --data '<?xml version="1.0" encoding="UTF-8"?>
-      <C:mkcalendar xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-        <D:set><D:prop><D:displayname>Work</D:displayname></D:prop></D:set>
-      </C:mkcalendar>' \
-    https://opencloud.YOURDOMAIN/caldav/USERNAME/work/
+Do this from a CalDAV client already connected to
+`https://opencloud.YOURDOMAIN` (Thunderbird, or the client you intend to use
+day to day): "New calendar" / "New address book" on the OpenCloud account.
+This is deliberately not a curl recipe — the collection URL contains the
+opaque ID, and a client already knows it from discovery while you would have
+to look it up and hand-assemble the path.
 
-# Address book
-curl -u USERNAME:APP_TOKEN -X MKCOL \
-    -H 'Content-Type: application/xml' \
-    --data '<?xml version="1.0" encoding="UTF-8"?>
-      <D:mkcol xmlns:D="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
-        <D:set><D:prop>
-          <D:resourcetype><D:collection/><CR:addressbook/></D:resourcetype>
-          <D:displayname>Work Contacts</D:displayname>
-        </D:prop></D:set>
-      </D:mkcol>' \
-    https://opencloud.YOURDOMAIN/carddav/USERNAME/work-contacts/
-```
-
-The last path segment is the collection id used in the vdirsyncer mapping
-below; the displayname is what clients show.
+Name them to match what you will put in `collections` below.
 
 ### 4. vdirsyncer config
 
@@ -240,9 +241,9 @@ password = "NEXTCLOUD_APP_PASSWORD"
 
 [storage oc_cal]
 type = "caldav"
-# The explicit /caldav/ path, not the bare host: let vdirsyncer talk to
-# Radicale directly rather than round-tripping through .well-known.
-url = "https://opencloud.YOURDOMAIN/caldav/"
+# The bare host. vdirsyncer follows .well-known/caldav to the principal, which
+# is the only way to learn the opaque-ID path — never write one in by hand.
+url = "https://opencloud.YOURDOMAIN/"
 username = "USERNAME"
 password = "OPENCLOUD_APP_TOKEN"
 
@@ -260,7 +261,7 @@ password = "NEXTCLOUD_APP_PASSWORD"
 
 [storage oc_card]
 type = "carddav"
-url = "https://opencloud.YOURDOMAIN/carddav/"
+url = "https://opencloud.YOURDOMAIN/"
 username = "USERNAME"
 password = "OPENCLOUD_APP_TOKEN"
 ```
