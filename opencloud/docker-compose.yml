@@ -61,10 +61,29 @@ services:
       COLLABORATION_WOPI_SRC: ${COLLABORATION_FQDN}
       COLLABORATION_CS3API_DATAGATEWAY_INSECURE: "true"
     volumes:
+      # Also carries proxy.yaml (Radicale routes) and csp.yaml, both placed
+      # here by init.sh.
       - ./config:/etc/opencloud
       - ./data:/var/lib/opencloud
     networks:
       - frontend
+      - backend
+
+  radicale:
+    image: opencloudeu/radicale:latest
+    container_name: opencloud-radicale
+    restart: unless-stopped
+    # The image bakes in a `radicale` account at 1000:1000 and drops to it;
+    # init.sh makes ./radicale-data match so the collections stay writable.
+    user: "1000:1000"
+    volumes:
+      - ./radicale.conf:/etc/radicale/config:ro
+      - ./radicale-data:/var/lib/radicale
+    # Backend only. Radicale trusts X-Remote-User blindly, so it must be
+    # unreachable except through the OpenCloud proxy, which sets that header
+    # only after authenticating. It is deliberately absent from `frontend`,
+    # and Caddy has no route to it.
+    networks:
       - backend
 
   opencloud-collabora:
