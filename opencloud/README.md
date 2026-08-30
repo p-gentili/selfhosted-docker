@@ -95,18 +95,269 @@ The `INITIAL_ADMIN_PASSWORD` env var only takes effect the very first time the
 stack comes up (when `opencloud init` runs). After that, change it through the
 web UI or with `docker exec opencloud opencloud idm`.
 
+## Calendars and contacts via Radicale
+
+CalDAV and CardDAV are served by a [Radicale](https://radicale.org/) container
+(`opencloudeu/radicale`), wired up the way upstream documents in
+[Calendar and Contacts Integration with Radicale](https://docs.opencloud.eu/docs/admin/configuration/radicale-integration/).
+Requires OpenCloud >= 2.3.0; this stack tracks `latest`.
+
+OpenCloud has no UI for calendars or contacts — this only provides the server.
+Use any CalDAV/CardDAV client.
+
+### How it fits together
+
+`proxy.yaml` (copied into `config/` by `init.sh`) adds four routes to the
+OpenCloud proxy: `/caldav/`, `/carddav/`, and the two matching `.well-known`
+endpoints. The proxy authenticates the request — OIDC session or app token —
+resolves the user, and forwards to `radicale:5232` with the username in
+`X-Remote-User` and an `X-Script-Name` telling Radicale which prefix it is
+mounted under, so the hrefs it returns are paths the client can actually
+follow.
+
+Radicale therefore runs with `auth type = http_x_remote_user`: it does no
+authentication of its own and trusts that header completely. **That is only
+safe because it is unreachable except through the proxy.** The container joins
+`backend` and not `frontend`, and Caddy has no route to it. Radicale logs a
+warning at startup that `http_x_remote_user` is selected while listening on
+`0.0.0.0` rather than loopback — expected, and unavoidable in a container. A
+request without the header gets a 403, so the failure mode if it were ever
+exposed is closed rather than open.
+
+### Collections are keyed by opaque ID, not username
+
+The proxy sets `X-Remote-User` to the user's **opaque ID** — a UUID — not their
+username (`services/proxy/pkg/middleware/account_resolver.go`, hardcoded, no
+config option). Radicale uses that string as the collection root, so a user's
+calendars live at `/caldav/<uuid>/def-calendar/`, and Radicale's default
+`owner_only` rights backend returns **403** for a path under any other name.
+
+The practical consequence: **always use `https://opencloud.YOURDOMAIN` as the
+entry point and let discovery find the rest.** A URL built by hand from a
+username gets a 403. Clients PROPFIND `current-user-principal` and are handed
+the correct path automatically; that is the only supported way to find it.
+
+A corollary worth knowing before it bites: the opaque ID, not the username, is
+what ties a user to their collections. Deleting and recreating a user in
+OpenCloud issues a new ID and orphans the old data under the old UUID — it is
+still on disk in `./radicale-data`, but that user sees an empty account.
+
+`radicale.conf` sets `predefined_collections`, so the first authenticated
+request from a user creates `def-calendar` ("Personal Calendar") and
+`def-addressbook` ("Personal Address Book"). Without it a new user has no
+collections at all and most clients offer no way to create one. Radicale's own
+web UI is disabled: it does its own password prompt, which would mean exposing
+an unauthenticated route past the proxy.
+
+Storage is plain files under `./radicale-data`, owned by uid/gid 1000 (the
+account baked into the image). `init.sh` fixes the ownership if it does not
+already match.
+
+There is no admin UI. Radicale's internal web interface cannot be used here:
+it does its own password prompt, so upstream's route for it is `unprotected`,
+which under `http_x_remote_user` means no `X-Remote-User` arrives and every
+request 403s. Use `radicale-ls.py` instead — it lists each collection's kind,
+component set and item count straight from disk, and is read-only:
+
+```bash
+python3 opencloud/radicale-ls.py opencloud/radicale-data
+```
+
+### Client setup
+
+Point the client at `https://opencloud.YOURDOMAIN` — the `.well-known`
+endpoints handle discovery from there. Username is the OpenCloud username;
+the password is an **app token**, not the Authentik password. Most CalDAV
+clients cannot do an OIDC browser flow, which is why `PROXY_ENABLE_APP_AUTH`
+is on.
+
+Create a token in the Web UI, or from the host:
+
+```bash
+# --expiration defaults to 72h, which is far too short for a client that has
+# to keep syncing. Pick something long-lived.
+docker exec opencloud opencloud auth-app create \
+    --user-name=USERNAME --expiration=8760h
+```
+
+Tokens are per-client and individually revocable, so use a separate one per
+device.
+
+## Migrating calendars and contacts from Nextcloud
+
+Both stacks run in parallel and Nextcloud's DAV data lives in MariaDB, which
+this migration never touches — so it is non-destructive and safe to repeat
+until the result looks right.
+
+The tool for this is [vdirsyncer](https://vdirsyncer.pimutils.org/), which
+syncs CalDAV to CalDAV directly. Do not export to `.ics` and split the file by
+hand: recurring events store their overrides as extra `VEVENT`s sharing a UID,
+and each event depends on the calendar-level `VTIMEZONE`. Both are easy to get
+wrong and the damage is silent.
+
+### 1. Credentials
+
+- **Nextcloud**: Settings -> Security -> "Create new app password".
+- **OpenCloud**: an app token (see above). Give it a long expiration.
+- Log in to OpenCloud once as the user first, so `def-calendar` and
+  `def-addressbook` exist.
+
+### 2. List what is on the Nextcloud side
+
+```bash
+docker exec -u www-data nextcloud php occ dav:list-calendars USERNAME
+docker exec -u www-data nextcloud php occ dav:list-addressbooks USERNAME
+```
+
+### 3. Pre-create the destination collections
+
+Radicale ships one calendar and one address book per user, and vdirsyncer is
+unreliable at creating collections on Radicale — so any extras need to exist
+first, one per Nextcloud calendar beyond the first.
+
+Do this from a CalDAV client already connected to
+`https://opencloud.YOURDOMAIN` (Thunderbird, or the client you intend to use
+day to day): "New calendar" / "New address book" on the OpenCloud account.
+This is deliberately not a curl recipe — the collection URL contains the
+opaque ID, and a client already knows it from discovery while you would have
+to look it up and hand-assemble the path.
+
+Name them to match what you will put in `collections` below.
+
+### 4. vdirsyncer config
+
+`~/.config/vdirsyncer/config`:
+
+```ini
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair calendars]
+a = "nc_cal"
+b = "oc_cal"
+# [shortname, collection on a, collection on b] — one row per calendar.
+# The Nextcloud id comes from `occ dav:list-calendars`, the OpenCloud one is
+# the path segment used at MKCALENDAR time.
+collections = [["personal", "personal", "def-calendar"],
+               ["work", "work", "work"]]
+# Nextcloud is authoritative: this is a one-way migration, not a merge.
+conflict_resolution = "a wins"
+
+[storage nc_cal]
+type = "caldav"
+url = "https://drive.YOURDOMAIN/remote.php/dav/"
+username = "USERNAME"
+password = "NEXTCLOUD_APP_PASSWORD"
+
+[storage oc_cal]
+type = "caldav"
+# The bare host. vdirsyncer follows .well-known/caldav to the principal, which
+# is the only way to learn the opaque-ID path — never write one in by hand.
+url = "https://opencloud.YOURDOMAIN/"
+username = "USERNAME"
+password = "OPENCLOUD_APP_TOKEN"
+
+[pair contacts]
+a = "nc_card"
+b = "oc_card"
+collections = [["personal", "contacts", "def-addressbook"]]
+conflict_resolution = "a wins"
+
+[storage nc_card]
+type = "carddav"
+url = "https://drive.YOURDOMAIN/remote.php/dav/"
+username = "USERNAME"
+password = "NEXTCLOUD_APP_PASSWORD"
+
+[storage oc_card]
+type = "carddav"
+url = "https://opencloud.YOURDOMAIN/"
+username = "USERNAME"
+password = "OPENCLOUD_APP_TOKEN"
+```
+
+### 4b. Copy collection names and component sets
+
+`metasync` carries displayname and colour but **not**
+`supported-calendar-component-set`. A collection created by `discover` gets no
+component set at all, and iOS reads that as "supports everything" — so every
+calendar shows up in both the Calendar app and Reminders, and deleting what
+looks like a stray task list actually deletes a calendar.
+
+`radicale-import-props.py` reads the real properties from Nextcloud over DAV
+and writes them into Radicale's `.Radicale.props`, matching collections by id.
+Run it after `sync`, with Radicale stopped so its metadata cache cannot
+overwrite the result:
+
+```bash
+docker compose -f opencloud/docker-compose.yml stop radicale
+
+# dry run first — prints every change it would make
+./opencloud/radicale-import-props.py --url https://drive.YOURDOMAIN \
+    --user USERNAME --radicale-data opencloud/radicale-data
+
+./opencloud/radicale-import-props.py ... --apply
+
+docker compose -f opencloud/docker-compose.yml start radicale
+```
+
+It is idempotent, backs up each file it touches to `.Radicale.props.bak`
+(Radicale ignores `.Radicale*` names, so the backups are inert), and never
+touches `tag` — that is what makes a collection a calendar or an address book,
+and Nextcloud has no equivalent property to copy from.
+
+Collections present on only one side are reported, not modified. Check
+`radicale-ls.py` afterwards: any calendar still showing an unset component set
+will keep appearing in both iOS apps.
+
+### 5. Run it
+
+```bash
+vdirsyncer discover     # confirms it can see both sides
+vdirsyncer metasync     # displaynames and colours
+vdirsyncer sync         # the events and contacts
+```
+
+`discover` prompts before touching anything; read what it reports before
+saying yes. If a collection mapping is wrong it will offer to create something
+unexpected — answer no and fix `collections`.
+
+### 6. Verify, then stop syncing
+
+Check counts on both sides, then spot-check a recurring event with a modified
+occurrence and an all-day event, since those are where iCalendar handling
+usually breaks.
+
+When the result is right, **delete the vdirsyncer config and status
+directory**. Leaving it in place risks a later run propagating OpenCloud
+changes back into Nextcloud, or resurrecting Nextcloud entries you deleted in
+OpenCloud. Move clients over to `https://opencloud.YOURDOMAIN`, and only then
+consider retiring Nextcloud's calendar and contacts.
+
+### Alternative without vdirsyncer
+
+Export each calendar from the Nextcloud Calendar app (`... -> Export`, or
+`GET https://drive.YOURDOMAIN/remote.php/dav/calendars/USER/CAL/?export`) and
+import the `.ics` into the OpenCloud calendar from Thunderbird, which is
+subscribed to both. Slower and manual, but Thunderbird parses iCalendar
+correctly, which is the part that matters.
+
 ## Backup considerations
 
 Unlike Nextcloud (MariaDB + filesystem), OpenCloud uses embedded storage
-(boltdb + files under `./data`). `pre-backup.sh` stops just the `opencloud`
-container so the data directory is consistent for snapshotting;
-`post-backup.sh` starts it again. Collabora and the collaboration service stay
-running — they are stateless.
+(boltdb + files under `./data`). `pre-backup.sh` stops the `opencloud` and
+`radicale` containers so their data directories are consistent for
+snapshotting; `post-backup.sh` starts them again. Radicale is included because
+its collections are plain files written in place with no transactional store.
+Collabora and the collaboration service stay running — they are stateless.
 
 ## Parallel-with-Nextcloud notes
 
 - OpenCloud lives on `opencloud.YOURDOMAIN`; Nextcloud stays on
   `drive.YOURDOMAIN`. No conflicts.
 - Each stack has its own Collabora; the two never share a WOPI host.
+- Calendars and contacts exist on both sides until they are migrated (see
+  above). Nextcloud keeps serving them read-write in the meantime — nothing
+  here disables them.
 - When Nextcloud is eventually retired, this stack stands on its own — nothing
   in `opencloud/` references the Nextcloud stack.

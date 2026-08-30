@@ -31,6 +31,7 @@ graph TD
             opencloud[OpenCloud]
             opencloud-collaboration[Collaboration WOPI]
             opencloud-collabora[Collabora]
+            opencloud-radicale[Radicale CalDAV/CardDAV]
         end
         subgraph Immich Network
             immich[immich]
