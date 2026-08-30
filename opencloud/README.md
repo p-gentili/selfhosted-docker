@@ -153,6 +153,16 @@ Storage is plain files under `./radicale-data`, owned by uid/gid 1000 (the
 account baked into the image). `init.sh` fixes the ownership if it does not
 already match.
 
+There is no admin UI. Radicale's internal web interface cannot be used here:
+it does its own password prompt, so upstream's route for it is `unprotected`,
+which under `http_x_remote_user` means no `X-Remote-User` arrives and every
+request 403s. Use `radicale-ls.py` instead — it lists each collection's kind,
+component set and item count straight from disk, and is read-only:
+
+```bash
+python3 opencloud/radicale-ls.py opencloud/radicale-data
+```
+
 ### Client setup
 
 Point the client at `https://opencloud.YOURDOMAIN` — the `.well-known`
@@ -265,6 +275,40 @@ url = "https://opencloud.YOURDOMAIN/"
 username = "USERNAME"
 password = "OPENCLOUD_APP_TOKEN"
 ```
+
+### 4b. Copy collection names and component sets
+
+`metasync` carries displayname and colour but **not**
+`supported-calendar-component-set`. A collection created by `discover` gets no
+component set at all, and iOS reads that as "supports everything" — so every
+calendar shows up in both the Calendar app and Reminders, and deleting what
+looks like a stray task list actually deletes a calendar.
+
+`radicale-import-props.py` reads the real properties from Nextcloud over DAV
+and writes them into Radicale's `.Radicale.props`, matching collections by id.
+Run it after `sync`, with Radicale stopped so its metadata cache cannot
+overwrite the result:
+
+```bash
+docker compose -f opencloud/docker-compose.yml stop radicale
+
+# dry run first — prints every change it would make
+./opencloud/radicale-import-props.py --url https://drive.YOURDOMAIN \
+    --user USERNAME --radicale-data opencloud/radicale-data
+
+./opencloud/radicale-import-props.py ... --apply
+
+docker compose -f opencloud/docker-compose.yml start radicale
+```
+
+It is idempotent, backs up each file it touches to `.Radicale.props.bak`
+(Radicale ignores `.Radicale*` names, so the backups are inert), and never
+touches `tag` — that is what makes a collection a calendar or an address book,
+and Nextcloud has no equivalent property to copy from.
+
+Collections present on only one side are reported, not modified. Check
+`radicale-ls.py` afterwards: any calendar still showing an unset component set
+will keep appearing in both iOS apps.
 
 ### 5. Run it
 
