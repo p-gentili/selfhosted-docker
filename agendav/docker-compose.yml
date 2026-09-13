@@ -5,12 +5,19 @@ services:
     #
     # The context is a shallow clone of a pinned tag that init.sh puts in
     # ./src, rather than a git URL context, because upstream's production
-    # Dockerfile cannot build from a clean checkout: it runs
-    # `chmod -R 750 /app/var`, but var/.gitkeep was deleted in ae1c3504
-    # ("fix(docker): Ensure write access to var dir") without updating that
-    # Dockerfile, so the directory is absent and the build fails. init.sh
-    # recreates it, which lets upstream's Dockerfile be used unmodified —
-    # nothing here has to track their build steps.
+    # Dockerfile is broken in two ways and init.sh has to repair the checkout
+    # before building:
+    #
+    #   1. It runs `chmod -R 750 /app/var`, but var/.gitkeep was deleted in
+    #      ae1c3504 without updating this Dockerfile, so the directory is
+    #      absent from a clean checkout and the build fails outright.
+    #   2. It runs three of the four npm asset steps, skipping `build:copy` —
+    #      the one that copies the icon fonts out of node_modules — so the
+    #      build succeeds but every icon in the UI renders broken.
+    #
+    # init.sh recreates the directory and inserts the missing step, both
+    # guarded so an upstream change becomes a loud failure rather than a
+    # silent regression. Everything else is upstream's Dockerfile as shipped.
     #
     # Watchtower only updates registry images and will skip this container:
     # upgrading means bumping AGENDAV_VERSION in init.sh and re-running it.

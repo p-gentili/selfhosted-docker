@@ -43,6 +43,28 @@ fi
 # unmodified.
 mkdir -p "$SRC/var"
 
+# Second bug in the same Dockerfile: package.json defines the asset build as
+# four steps (build:assets = templates + copy + css + js), but the Dockerfile
+# runs only three, skipping build:copy. That step is what copies the icon
+# fonts out of node_modules — Font Awesome and Bootstrap glyphicons — plus the
+# fullcalendar locales and jquery-ui theme images. All of them are gitignored,
+# so they exist nowhere else, and the compiled CSS then requests
+# ../../font/fa/fontawesome-webfont.woff2 and friends, which 404: every
+# calendar icon renders broken.
+#
+# Insert the missing step rather than vendoring their Dockerfile. The guard
+# makes an upstream change to this line a loud failure instead of silently
+# returning broken icons; the grep makes it a no-op once upstream fixes it.
+if ! grep -q 'npm run build:copy' "$SRC/Dockerfile"; then
+    if ! grep -q '&& npm run build:css \\' "$SRC/Dockerfile"; then
+        echo "$SRC/Dockerfile: expected '&& npm run build:css \\' not found." >&2
+        echo "Upstream changed the asset build; re-check it before bumping." >&2
+        exit 1
+    fi
+    sed -i 's|&& npm run build:css \\|\&\& npm run build:copy \\\n    \&\& npm run build:css \\|' \
+        "$SRC/Dockerfile"
+fi
+
 # Render the config. settings.php is generated rather than tracked because it
 # carries both secrets; changes belong in settings.template.php. The explicit
 # variable list keeps envsubst from touching anything else in the file.

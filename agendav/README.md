@@ -139,11 +139,38 @@ production one. Upstream CI only runs composer and npm, so the break shipped in
 chmod: cannot access '/app/var': No such file or directory
 ```
 
-Cloning lets `init.sh` recreate that one directory before building, so
-upstream's Dockerfile is used **unmodified**. The alternative — inlining a
-patched copy of their Dockerfile — would mean silently tracking their build
-steps forever. Recreating the directory is the whole fix; if upstream repairs
-it, the `mkdir` simply becomes a no-op.
+Cloning lets `init.sh` recreate that one directory before building. The
+alternative — inlining a patched copy of their Dockerfile — would mean
+silently tracking their build steps forever. If upstream repairs it, the
+`mkdir` simply becomes a no-op.
+
+### Missing icon fonts — a second bug in the same Dockerfile
+
+`package.json` defines the asset build as four steps:
+
+```
+build:assets = build:templates && build:copy && build:css && build:js
+```
+
+The production Dockerfile runs only three, **skipping `build:copy`**. That is
+the step which copies Font Awesome and Bootstrap glyphicon fonts out of
+`node_modules`, along with the fullcalendar locales and jquery-ui theme
+images. All of those paths are gitignored, so they exist nowhere else in a
+checkout, and the compiled CSS then asks for files that were never created:
+
+```
+url('../../font/fa/fontawesome-webfont.woff2?v=4.2.0')
+url("../../font/bootstrap/glyphicons-halflings-regular.woff2")
+```
+
+The build succeeds, so nothing looks wrong — but those 404, and **every icon
+in the UI renders broken**. The fullcalendar locales are missing too, so any
+non-English locale would fail as well.
+
+`init.sh` inserts the missing step into the cloned Dockerfile before building.
+Both repairs are guarded: if upstream changes the line being patched,
+`init.sh` **fails loudly** rather than quietly producing broken icons again,
+and if upstream fixes it the patch becomes a no-op.
 
 Two further consequences:
 
