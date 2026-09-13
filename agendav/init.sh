@@ -56,7 +56,11 @@ chmod 640 "$DIRNAME/settings.php"
 # bind mounts arrive owned by the host user. Only chown when it is actually
 # wrong, so the common case never prompts for sudo.
 for path in "$DIRNAME/data" "$DIRNAME/var" "$DIRNAME/settings.php"; do
-    if [ "$(stat -c %u:%g "$path")" != "33:33" ]; then
+    # Test the contents, not just the top-level directory: an earlier release
+    # ran the migrations as root, which left a root-owned agendav.sqlite
+    # inside an already-correct data/. Checking only the directory would skip
+    # it, and Apache's workers would still be unable to write the database.
+    if [ -n "$(find "$path" \( ! -user 33 -o ! -group 33 \) -print -quit 2>/dev/null)" ]; then
         sudo chown -R 33:33 "$path"
     fi
 done
@@ -68,4 +72,9 @@ docker compose -f $COMPOSE up -d --build
 
 # Create or update the schema. The CLI exits 255 when config/settings.php is
 # missing, so this has to follow the render above.
-docker compose -f $COMPOSE exec -T agendav php bin/agendavcli migrations:migrate -n
+#
+# --user www-data because the image declares no default user: a plain `exec`
+# runs as root and creates agendav.sqlite root-owned, after which Apache's
+# workers can read the database but not write it, and every request 500s.
+docker compose -f $COMPOSE exec -T --user www-data agendav \
+    php bin/agendavcli migrations:migrate -n

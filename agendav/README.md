@@ -82,6 +82,23 @@ curl -sSi -X OPTIONS -u 'USERNAME:APP_TOKEN' https://opencloud.DOMAIN/caldav/ | 
 No `DAV:` header in the response means AgenDAV cannot log in, and nothing in
 this stack's config will change that — the problem is on the proxy side.
 
+### Debugging a 500
+
+The container runs with `AGENDAV_ENVIRONMENT=prod`, which deliberately
+suppresses stack traces — so a fault shows up as a blank 500 with nothing in
+`docker logs` beyond the Apache access line. To see the actual exception, run
+the image once with the environment flipped:
+
+```bash
+docker run --rm -p 18080:80 -e AGENDAV_ENVIRONMENT=dev \
+    -v "$PWD/settings.php:/app/config/settings.php:ro" \
+    -v "$PWD/data:/app/database" -v "$PWD/var:/app/var" \
+    agendav-agendav:latest
+```
+
+The trace is then rendered in the response body. Never leave the deployed
+stack in `dev`.
+
 Then confirm discovery returns a principal:
 
 ```bash
@@ -150,6 +167,34 @@ both secrets. Edit the template, then re-run `init.sh`.
 
 `session.encryption.key` is what encrypts the app token held in each session.
 Changing it invalidates existing sessions, which only means logging in again.
+
+### Sessions are files, not database rows
+
+AgenDAV keeps sessions in the database by default, through Symfony's
+`PdoSessionHandler`. Upstream wires that handler with `LOCK_ADVISORY`, and
+SQLite has no advisory locks, so every request dies at `session_start()` with:
+
+```
+DomainException: SQLite does not support advisory locks
+```
+
+The lock mode is hardcoded in `app/services.php` (chosen so the session
+connection cannot collide with Doctrine's transactions) and cannot be
+overridden from configuration, so `settings.template.php` sets
+`session.handler = 'native'` to use PHP file sessions instead.
+
+Those session files live inside the container, so recreating it — which
+`init.sh` does on every run — logs you out. Expect to re-enter your username
+and app token after an upgrade.
+
+### The database must be owned by www-data
+
+`init.sh` runs the migrations with `--user www-data`. The image declares no
+default user, so a plain `docker compose exec` runs them as **root**, creating
+`agendav.sqlite` root-owned; Apache's workers can then read the database but
+not write it, and every request returns 500. The ownership check in `init.sh`
+inspects the *contents* of `data/` rather than just the directory, so a
+database left root-owned by an earlier run gets corrected on the next run.
 
 ## Backup
 

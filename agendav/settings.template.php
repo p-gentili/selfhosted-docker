@@ -21,6 +21,23 @@ return [
         'path' => '/app/database/agendav.sqlite',
     ],
 
+    // PHP file sessions. AgenDAV defaults to 'pdo', which keeps sessions in
+    // the database via Symfony's PdoSessionHandler — and app/services.php
+    // wires that handler with LOCK_ADVISORY, so against SQLite every single
+    // request dies at session_start() with:
+    //
+    //     DomainException: SQLite does not support advisory locks
+    //
+    // The lock mode is hardcoded upstream (chosen so the session connection
+    // cannot collide with Doctrine's own transactions) and cannot be
+    // overridden from here, so file sessions are the only option while the
+    // database is SQLite.
+    //
+    // Consequence: sessions live inside the container and do not survive it
+    // being recreated, so `init.sh` logs you out. Logging back in needs the
+    // app token again.
+    'session.handler' => 'native',
+
     // Internal address of the CalDAV server. This is OpenCloud's proxy, not
     // Radicale directly: the proxy validates the Basic credentials below,
     // resolves the user and forwards to radicale:5232 with X-Remote-User set.
