@@ -1,4 +1,5 @@
 .env
 data
 var
+src
 settings.php

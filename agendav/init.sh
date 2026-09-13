@@ -19,6 +19,30 @@ done
 
 mkdir -p "$DIRNAME/data" "$DIRNAME/var"
 
+# AgenDAV publishes no image to any registry, so the source is cloned here and
+# built from ./src by docker compose, using upstream's own production
+# Dockerfile. Bump this to upgrade.
+AGENDAV_VERSION=3.3.1
+SRC=$DIRNAME/src
+
+if [ ! -d "$SRC/.git" ]; then
+    git clone --depth 1 --branch "$AGENDAV_VERSION" \
+        https://github.com/agendav/agendav.git "$SRC"
+else
+    git -C "$SRC" fetch --depth 1 --force origin \
+        "refs/tags/$AGENDAV_VERSION:refs/tags/$AGENDAV_VERSION"
+    git -C "$SRC" checkout --quiet --force "$AGENDAV_VERSION"
+fi
+
+# Upstream's production Dockerfile runs `chmod -R 750 /app/var`, but var/ holds
+# only generated files and its .gitkeep was deleted in ae1c3504 ("fix(docker):
+# Ensure write access to var dir") without updating that Dockerfile — so the
+# directory is missing from a clean checkout and the build fails there. Their
+# CI never builds this Dockerfile, so it shipped broken in 3.3.0. Recreating
+# the directory is the entire fix, and keeps upstream's Dockerfile usable
+# unmodified.
+mkdir -p "$SRC/var"
+
 # Render the config. settings.php is generated rather than tracked because it
 # carries both secrets; changes belong in settings.template.php. The explicit
 # variable list keeps envsubst from touching anything else in the file.

@@ -1,10 +1,22 @@
 services:
   agendav:
     # AgenDAV publishes no image to any registry, so this builds upstream's own
-    # production Dockerfile (php:8.5-apache, document root /app/public) at a
-    # pinned tag. Watchtower only updates registry images and will skip this
-    # container: upgrading means bumping the tag below and re-running init.sh.
-    build: https://github.com/agendav/agendav.git#3.3.1
+    # production Dockerfile (php:8.5-apache, document root /app/public).
+    #
+    # The context is a shallow clone of a pinned tag that init.sh puts in
+    # ./src, rather than a git URL context, because upstream's production
+    # Dockerfile cannot build from a clean checkout: it runs
+    # `chmod -R 750 /app/var`, but var/.gitkeep was deleted in ae1c3504
+    # ("fix(docker): Ensure write access to var dir") without updating that
+    # Dockerfile, so the directory is absent and the build fails. init.sh
+    # recreates it, which lets upstream's Dockerfile be used unmodified —
+    # nothing here has to track their build steps.
+    #
+    # Watchtower only updates registry images and will skip this container:
+    # upgrading means bumping AGENDAV_VERSION in init.sh and re-running it.
+    build:
+      context: ./src
+      dockerfile: Dockerfile
     container_name: agendav
     restart: unless-stopped
     environment:
