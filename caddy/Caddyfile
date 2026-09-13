@@ -166,3 +166,9 @@ collabora.{$DOMAIN} {
 		}
 	}
 }
+
+calendar.{$DOMAIN} {
+	reverse_proxy agendav:80 {
+		header_up X-Real-IP {remote_host}
+	}
+}

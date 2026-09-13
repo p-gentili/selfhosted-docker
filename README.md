@@ -22,6 +22,7 @@ graph TD
         mealy[Mealy]
         changedetection[changedetection.io]
         kosync[KOReader Sync]
+        agendav[AgenDAV]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -59,6 +60,8 @@ graph TD
   caddy --> mealy
   caddy --> changedetection
   caddy --> kosync
+  caddy --> agendav
+  agendav --CalDAV--> opencloud
 ```
 
 ## Install

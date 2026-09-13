@@ -1,0 +1,35 @@
+services:
+  agendav:
+    # AgenDAV publishes no image to any registry, so this builds upstream's own
+    # production Dockerfile (php:8.5-apache, document root /app/public) at a
+    # pinned tag. Watchtower only updates registry images and will skip this
+    # container: upgrading means bumping the tag below and re-running init.sh.
+    build: https://github.com/agendav/agendav.git#3.3.1
+    container_name: agendav
+    restart: unless-stopped
+    environment:
+      # Upstream's Dockerfile already defaults to prod; set explicitly so a
+      # future base-image change can't silently turn stack traces back on.
+      AGENDAV_ENVIRONMENT: prod
+    volumes:
+      # Rendered from settings.template.php by init.sh. Carries the CSRF secret
+      # and the session encryption key, so it is gitignored and mode 640.
+      - ./settings.php:/app/config/settings.php:ro
+      # SQLite store: sessions, user preferences, subscriptions.
+      - ./data:/app/database
+      # Twig cache, logs and var/session.key. The image ships this owned by
+      # www-data; a bind mount masks that, so init.sh restores the ownership.
+      - ./var:/app/var
+    # frontend only. AgenDAV reaches the CalDAV server as http://opencloud:9200
+    # over this same network — the OpenCloud proxy is the authentication
+    # boundary and does the Basic-auth check. The opencloud stack's `backend`
+    # network (where Radicale lives) is stack-local and deliberately not joined:
+    # Radicale trusts X-Remote-User blindly and must stay reachable only via the
+    # proxy.
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
