@@ -19,15 +19,11 @@ services:
       - backend
 
   server:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8}
     container_name: authentik-server
     restart: unless-stopped
     command: server
     shm_size: 512mb
-    # Upgrades must step through every major.minor release in order and run
-    # DB migrations, so watchtower must never bump this on its own.
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
     environment:
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
@@ -48,13 +44,11 @@ services:
       - backend
 
   worker:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8}
     container_name: authentik-worker
     restart: unless-stopped
     command: worker
     shm_size: 512mb
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
     environment:
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
