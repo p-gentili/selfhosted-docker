@@ -22,6 +22,25 @@ OIDC / SSO identity provider for the other services in this repo.
    Log in as `akadmin` with `AUTHENTIK_BOOTSTRAP_PASSWORD`. Change the password from
    *Directory > Users > akadmin*.
 
+## Upgrading
+
+`AUTHENTIK_TAG` is a `major.minor` tag (e.g. `2026.8`), so watchtower picks up
+patch releases but never moves to the next minor on its own. If authentik
+crash-loops with `exec format error`, upstream has pointed the tag at an
+arm64-only image (it happened to `2025.2`): pin the last good patch release
+until it's fixed.
+
+Moving to a new `major.minor` is manual, and upgrades can't skip versions.
+Step through the latest patch of every `major.minor` release in order (see the
+tag list on ghcr.io), read each release's notes, and back up the database first:
+
+```bash
+docker exec authentik-db pg_dump -U authentik authentik | gzip > ~/backups/authentik-$(date +%F).sql.gz
+AUTHENTIK_TAG=<next-version> docker compose up -d server worker   # wait for healthy, repeat
+```
+
+Then set the new `major.minor` in `.env` and in the compose default.
+
 ## Adding a service (Nextcloud example)
 
 In Authentik admin:
