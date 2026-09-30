@@ -18,29 +18,17 @@ services:
     networks:
       - backend
 
-  redis:
-    image: redis:alpine
-    container_name: authentik-redis
-    restart: unless-stopped
-    command: --save 60 1 --loglevel warning
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 20s
-      interval: 30s
-      retries: 5
-      timeout: 3s
-    volumes:
-      - redis:/data
-    networks:
-      - backend
-
   server:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2025.2}
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
     container_name: authentik-server
     restart: unless-stopped
     command: server
+    shm_size: 512mb
+    # Upgrades must step through every major.minor release in order and run
+    # DB migrations, so watchtower must never bump this on its own.
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
     environment:
-      AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
@@ -50,24 +38,24 @@ services:
       AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN}
       AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL}
     volumes:
-      - ./media:/media
+      - ./data:/data
       - ./custom-templates:/templates
     depends_on:
       postgresql:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - frontend
       - backend
 
   worker:
-    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2025.2}
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
     container_name: authentik-worker
     restart: unless-stopped
     command: worker
+    shm_size: 512mb
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
     environment:
-      AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
@@ -79,13 +67,11 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./media:/media
+      - ./data:/data
       - ./certs:/certs
       - ./custom-templates:/templates
     depends_on:
       postgresql:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - backend
@@ -98,4 +84,3 @@ networks:
 
 volumes:
   database:
-  redis:
