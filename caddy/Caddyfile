@@ -134,12 +134,6 @@ auth.{$DOMAIN} {
 	}
 }
 
-notes.{$DOMAIN} {
-	reverse_proxy silverbullet:3000 {
-		header_up X-Real-IP {remote_host}
-	}
-}
-
 kosync.{$DOMAIN} {
 	reverse_proxy kosync:17200 {
 		header_up X-Real-IP {remote_host}
