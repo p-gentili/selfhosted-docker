@@ -1,0 +1,49 @@
+services:
+  silo:
+    # Single "omnibus" container: Silo plus its own bundled PostgreSQL 18
+    # (pgvector) and Redis, all persisted under ./config. Watchtower keeps
+    # `latest` current; set SILO_IMAGE in .env to pin a build-N tag instead.
+    image: ${SILO_IMAGE:-ghcr.io/silo-server/silo-server:latest}
+    container_name: silo
+    restart: unless-stopped
+    # Silo drains in-flight requests and then stops PostgreSQL cleanly;
+    # Docker's default 10s would cut that short.
+    stop_grace_period: 2m
+    # Lets Silo use BBR and a larger TCP send buffer on its listeners. Behind
+    # Caddy that only covers the Caddy->Silo hop, so it is optional: remove
+    # it and Silo just logs the limits it cannot change.
+    cap_add: [NET_ADMIN]
+    environment:
+      # Fixed in-container listeners. Nothing is published on the host: Caddy
+      # reaches 8080 over the frontend network. 8096 (Jellyfin-compatible
+      # API) and 13378 (Audiobookshelf-compatible) stay internal.
+      PORT: "8080"
+      JF_PORT: "8096"
+      ABS_PORT: "13378"
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Europe/Rome
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env, see README}
+      # Watch Party rooms need Redis.
+      ENABLE_REDIS: "true"
+    volumes:
+      # Silo state, the PostgreSQL cluster and Redis data.
+      - ./config:/config
+      # The same library Jellyfin serves, read-only: Silo never writes to it.
+      # Don't change the container path after libraries have been added.
+      - /media/external/media:/mnt/media:ro
+      # Transcode segments and prepared downloads, kept out of ./config so
+      # backups stay small. Without these mounts they are lost on recreate.
+      - ./transcode:/tmp/silo-transcode
+      - ./download-artifacts:/tmp/silo-download-artifacts
+    # Intel/AMD VA-API, the same render node Jellyfin uses. The image adds its
+    # PUID user to the device's group on start, so no group_add is needed.
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true

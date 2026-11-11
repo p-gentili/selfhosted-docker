@@ -15,6 +15,7 @@ graph TD
       subgraph CaddyServices
         vaultwarden[Vaultwarden]
         jellyfin[Jellyfin]
+        silo[Silo]
         transmission[Transmission]
         linkding[Linkding]
         ghostfolio[Ghostfolio]
@@ -50,6 +51,7 @@ graph TD
   Router --DNS--> adguard-home
   caddy --> vaultwarden
   caddy --> jellyfin
+  caddy --> silo
   caddy --> nextcloud
   caddy --> opencloud
   caddy --> immich
