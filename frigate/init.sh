@@ -15,14 +15,14 @@ if grep -q '=changeme$\|192.168.68.x' "$DIRNAME/.env"; then
     exit 1
 fi
 
-# Without the dedicated filesystem, recordings would land on the shared
-# external disk and fill it, so refuse to start.
-if ! mountpoint -q "$STORAGE"; then
-    echo "$STORAGE is not mounted. Run: sudo $DIRNAME/setup-storage.sh <size in GB>" >&2
+# Recordings go on the external drive; don't create the folder on the root
+# disk if it isn't mounted.
+if ! mountpoint -q /media/external; then
+    echo "/media/external is not mounted." >&2
     exit 1
 fi
 
-mkdir -p "$DIRNAME/config"
+mkdir -p "$DIRNAME/config" "$STORAGE"
 if [ ! -f "$DIRNAME/config/config.yml" ]; then
     cp "$DIRNAME/config.template.yml" "$DIRNAME/config/config.yml"
 fi

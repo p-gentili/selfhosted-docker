@@ -17,8 +17,7 @@ services:
       # config.yml (seeded from config.template.yml), the SQLite database,
       # and model caches.
       - ./config:/config
-      # Recordings, clips and snapshots, on the fixed-size filesystem that
-      # setup-storage.sh creates. Its size is the cap on stored video.
+      # Recordings, clips and snapshots, kept by age (record: in config.yml).
       - /media/external/frigate:/media/frigate
       # Recording segments are staged here in RAM before they are moved to
       # /media/frigate.

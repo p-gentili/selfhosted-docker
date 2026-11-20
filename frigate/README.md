@@ -8,31 +8,14 @@ An NVR for the Tapo C210. It records the 2K stream, spots people on the
 Assistant over MQTT ([`../mosquitto`](../mosquitto)). The web UI is at
 `frigate.DOMAIN`, behind Frigate's own login.
 
-## Recording cap
+## Recordings
 
-Recordings are kept by age (`record:` in `config.yml`): everything for 3
-days, motion for 7, and alerts and detections for 30. Frigate has no size
-limit of its own. When the disk under `/media/frigate` has less than about an
-hour of headroom left, it deletes the oldest recordings first.
-
-That disk is a fixed-size ext4 image on the external drive
-(`/media/external/frigate.img`, mounted at `/media/external/frigate`), so its
-size is the hard maximum for recordings, and the rest of the drive is never
-touched. If `init.sh` finds it unmounted, it refuses to start Frigate rather
-than writing onto the shared drive.
-
-At 2K the C210 records roughly 20 GB a day continuously (an estimate; check
-*System > Storage* in the UI after a few days), so 200 GB should cover the
-default retention.
-
-**To resize it** (Frigate stopped):
-```bash
-docker compose stop frigate
-sudo umount /media/external/frigate
-sudo truncate -s 300G /media/external/frigate.img   # grow only
-sudo e2fsck -f /media/external/frigate.img && sudo resize2fs /media/external/frigate.img
-sudo mount /media/external/frigate && docker compose start frigate
-```
+Recordings, clips and snapshots go to `/media/external/frigate`, outside
+`/srv`. They are kept by age (`record:` in `config.yml`): everything for 3
+days, motion for 7, and alerts and detections for 30. At 2K the C210 records
+roughly 20 GB a day continuously (an estimate; check *System > Storage* in
+the UI after a few days). If the external drive ever runs nearly full,
+Frigate deletes its oldest recordings first.
 
 ## Setup
 
@@ -41,16 +24,14 @@ sudo mount /media/external/frigate && docker compose start frigate
    the video and for pan/tilt. Give the camera a fixed IP address in the
    router.
 2. **MQTT.** Set up [`../mosquitto`](../mosquitto) first.
-3. **Storage.** `sudo ./setup-storage.sh 200` (size in GB). It creates the
-   image, adds it to `/etc/fstab` and mounts it. Run it once.
-4. **Config.** `cp .env.sample .env` and fill in the camera's IP and account,
+3. **Config.** `cp .env.sample .env` and fill in the camera's IP and account,
    and the MQTT user and password from `../mosquitto/.env`.
-5. **DNS.** Add a record for `frigate.DOMAIN` (already in
+4. **DNS.** Add a record for `frigate.DOMAIN` (already in
    `../caddy/Caddyfile`), then restart Caddy.
-6. `./init.sh`. On the first run it copies `config.template.yml` to
+5. `./init.sh`. On the first run it copies `config.template.yml` to
    `./config/config.yml`. From then on, that file is the one to edit, or use
    the UI, which edits it in place.
-7. Get the admin password from the logs:
+6. Get the admin password from the logs:
    `docker logs frigate 2>&1 | grep -A2 Password`. Then open
    `https://frigate.DOMAIN`, log in as `admin`, and change it under
    *Settings > Users*.

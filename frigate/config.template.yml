@@ -78,9 +78,8 @@ objects:
   track:
     - person
 
-# Retention by age. On top of this, the size of /media/frigate is a hard cap:
-# when it has less than about an hour of recording headroom left, Frigate
-# deletes the oldest recordings first, whatever the settings below say.
+# Retention by age. If the external drive runs nearly full, Frigate also
+# deletes its oldest recordings first.
 record:
   enabled: true
   continuous:
