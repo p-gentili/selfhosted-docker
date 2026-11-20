@@ -25,7 +25,7 @@ Frigate deletes its oldest recordings first.
    router.
 2. **MQTT.** Set up [`../mosquitto`](../mosquitto) first.
 3. **Config.** `cp .env.sample .env` and fill in the camera's IP and account,
-   and the MQTT user and password from `../mosquitto/.env`.
+   and the password of the `frigate` account from `../mosquitto/.env`.
 4. **DNS.** Add a record for `frigate.DOMAIN` (already in
    `../caddy/Caddyfile`), then restart Caddy.
 5. `./init.sh`. On the first run it copies `config.template.yml` to
