@@ -34,14 +34,15 @@ ffmpeg:
 # go2rtc holds the only connections to the camera and restreams them to
 # Frigate, the live view and Home Assistant. The C210 sends G.711 audio,
 # which MP4 recordings and browsers can't play, so the ffmpeg source adds an
-# AAC copy of the main stream.
+# AAC copy of the main stream. The URLs use the percent-encoded password
+# that init.sh derives; ONVIF below takes the password as typed.
 go2rtc:
   streams:
     c210:
-      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD}@{FRIGATE_TAPO_HOST}:554/stream1"
+      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD_URL}@{FRIGATE_TAPO_HOST}:554/stream1"
       - "ffmpeg:c210#audio=aac"
     c210_sub:
-      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD}@{FRIGATE_TAPO_HOST}:554/stream2"
+      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD_URL}@{FRIGATE_TAPO_HOST}:554/stream2"
 
 cameras:
   c210:

@@ -26,8 +26,10 @@ services:
         tmpfs:
           size: 1000000000
     # FRIGATE_* variables are substituted into config.yml ({FRIGATE_...}).
+    # init.sh writes .env.generated: the URL-encoded Tapo password.
     env_file:
       - .env
+      - .env.generated
     # Nothing is published on the host. Caddy reaches the UI on 8971, and
     # Home Assistant reaches 8971 (API) and 8554 (RTSP restream) over the
     # frontend network.

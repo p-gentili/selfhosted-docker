@@ -15,14 +15,27 @@ if grep -q '=changeme$\|192.168.68.x' "$DIRNAME/.env"; then
     exit 1
 fi
 
-# Passwords end up inside rtsp:// URLs (where `#`, `@`, `/`... break the
-# URL) and pass through compose (which mangles `$`): letters and digits only.
-BAD=$(grep -E '^FRIGATE_[A-Z_]*PASSWORD=' "$DIRNAME/.env" | grep -E '=.*[^A-Za-z0-9]' | cut -d= -f1 || true)
-if [ -n "$BAD" ]; then
-    echo "These passwords in .env may only contain letters and digits:" $BAD >&2
-    echo "Change them at the source too (Tapo app, ../mosquitto/.env)." >&2
+# The MQTT password must match ../mosquitto/.env, which only allows letters
+# and digits.
+if grep -E '^FRIGATE_MQTT_PASSWORD=' "$DIRNAME/.env" | grep -qE '=.*[^A-Za-z0-9]'; then
+    echo "FRIGATE_MQTT_PASSWORD may only contain letters and digits." >&2
     exit 1
 fi
+
+# The Tapo password may hold any symbol except `$`, which compose rewrites.
+# ONVIF takes it as-is; the rtsp:// URLs need it percent-encoded (a `#`
+# would end the URL), so write that form to .env.generated for compose.
+TAPO_PASSWORD=$(grep -E '^FRIGATE_TAPO_PASSWORD=' "$DIRNAME/.env" | cut -d= -f2-)
+if [[ "$TAPO_PASSWORD" == *'$'* ]]; then
+    echo "FRIGATE_TAPO_PASSWORD can't contain \$: compose would rewrite it." >&2
+    exit 1
+fi
+(
+    umask 077
+    printf 'FRIGATE_TAPO_PASSWORD_URL=%s\n' "$(python3 -c \
+        'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' \
+        "$TAPO_PASSWORD")" > "$DIRNAME/.env.generated"
+)
 
 # Recordings go on the external drive; don't create the folder on the root
 # disk if it isn't mounted.
