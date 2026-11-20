@@ -15,6 +15,10 @@ stream.{$DOMAIN}:443 {
 	}
 }
 
+silo.{$DOMAIN} {
+	reverse_proxy silo:8080
+}
+
 drive.{$DOMAIN} {
 	encode gzip zstd
 
