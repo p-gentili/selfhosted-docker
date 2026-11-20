@@ -63,6 +63,8 @@ cameras:
           roles:
             - detect
     detect:
+      # Off by default since Frigate 0.18.
+      enabled: true
       width: 640
       height: 360
       fps: 5
