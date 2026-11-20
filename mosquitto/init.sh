@@ -22,6 +22,14 @@ if echo "$ACCOUNTS" | grep -qE '=(changeme)?$'; then
     exit 1
 fi
 
+# Frigate reads the same password through docker compose, which treats `$`
+# as a variable; keep passwords to letters and digits.
+if echo "$ACCOUNTS" | cut -d= -f2- | grep -q '[^A-Za-z0-9]'; then
+    echo "MQTT passwords in .env may only contain letters and digits" >&2
+    echo "(compose would mangle \$, for example). Use: openssl rand -hex 24" >&2
+    exit 1
+fi
+
 mkdir -p "$DIRNAME/config" "$DIRNAME/data"
 chown 1000:1000 "$DIRNAME/config" "$DIRNAME/data" 2>/dev/null || true
 
