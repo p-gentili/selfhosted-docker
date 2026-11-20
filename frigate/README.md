@@ -39,9 +39,12 @@ Frigate deletes its oldest recordings first.
 ## Pan/tilt
 
 The C210's ONVIF service on port 2020 gives the live view arrow controls,
-using the same camera account. Autotracking (following a person) needs
-ONVIF relative moves, which Tapo cameras don't usually offer, so expect it
-not to work. The Tapo app keeps working alongside Frigate.
+using the same camera account. The Tapo app keeps working alongside Frigate.
+
+The camera reports relative pan/tilt (`pt-r` in `/api/c210/ptz/info`), which
+is what [autotracking](https://docs.frigate.video/configuration/autotracking)
+(following a person) needs. It is off and untested; it needs calibrating
+first, and the C210 has no zoom.
 
 ## Home Assistant
 
