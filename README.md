@@ -24,6 +24,7 @@ graph TD
         changedetection[changedetection.io]
         kosync[KOReader Sync]
         agendav[AgenDAV]
+        homeassistant[Home Assistant]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -63,6 +64,7 @@ graph TD
   caddy --> changedetection
   caddy --> kosync
   caddy --> agendav
+  caddy --> homeassistant
   agendav --CalDAV--> opencloud
 ```
 
