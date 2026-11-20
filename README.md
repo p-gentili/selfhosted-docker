@@ -25,6 +25,8 @@ graph TD
         kosync[KOReader Sync]
         agendav[AgenDAV]
         homeassistant[Home Assistant]
+        frigate[Frigate]
+        mosquitto[Mosquitto MQTT]
         subgraph NextCloud Network
             nextcloud[NextCloud]
             nextcloud-code[Collabora]
@@ -65,6 +67,10 @@ graph TD
   caddy --> kosync
   caddy --> agendav
   caddy --> homeassistant
+  caddy --> frigate
+  frigate --MQTT--> mosquitto
+  homeassistant --MQTT--> mosquitto
+  homeassistant --API--> frigate
   agendav --CalDAV--> opencloud
 ```
 

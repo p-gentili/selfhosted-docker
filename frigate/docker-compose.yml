@@ -1,0 +1,41 @@
+services:
+  frigate:
+    container_name: frigate
+    image: ghcr.io/blakeblackshear/frigate:stable
+    restart: unless-stopped
+    # Lets Frigate close its recording segments and the database cleanly.
+    stop_grace_period: 30s
+    # Raw decoded frames for detection, plus Frigate's logs and nginx cache.
+    # Plenty for one camera detecting at 640x360.
+    shm_size: "256mb"
+    # Intel UHD 630: VA-API video decoding and OpenVINO object detection,
+    # the same render node Jellyfin and Silo use.
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # config.yml (seeded from config.template.yml), the SQLite database,
+      # and model caches.
+      - ./config:/config
+      # Recordings, clips and snapshots, on the fixed-size filesystem that
+      # setup-storage.sh creates. Its size is the cap on stored video.
+      - /media/external/frigate:/media/frigate
+      # Recording segments are staged here in RAM before they are moved to
+      # /media/frigate.
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    # FRIGATE_* variables are substituted into config.yml ({FRIGATE_...}).
+    env_file:
+      - .env
+    # Nothing is published on the host. Caddy reaches the UI on 8971, and
+    # Home Assistant reaches 8971 (API) and 8554 (RTSP restream) over the
+    # frontend network.
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
