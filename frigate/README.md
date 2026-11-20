@@ -32,9 +32,13 @@ Frigate deletes its oldest recordings first.
    `./config/config.yml`. From then on, that file is the one to edit, or use
    the UI, which edits it in place.
 6. Get the admin password from the logs:
-   `docker logs frigate 2>&1 | grep -A2 Password`. Then open
+   `docker logs frigate 2>&1 | grep -A2 -i password`. Then open
    `https://frigate.DOMAIN`, log in as `admin`, and change it under
-   *Settings > Users*.
+   *Settings > Users*. The password is only printed on the very first start,
+   and every `init.sh` run recreates the container and its logs. If it's
+   gone, add `auth: {reset_admin_password: true}` to `config/config.yml`,
+   run `docker restart frigate`, read the new one from the logs, and remove
+   the line again.
 
 ## Pan/tilt
 
