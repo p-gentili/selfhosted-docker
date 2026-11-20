@@ -26,10 +26,13 @@ services:
         tmpfs:
           size: 1000000000
     # FRIGATE_* variables are substituted into config.yml ({FRIGATE_...}).
-    # init.sh writes .env.generated: the URL-encoded Tapo password.
+    # init.sh writes .env.generated (the URL-encoded Tapo password) before
+    # every start; it is optional here only so `docker compose config` works
+    # without it, as in CI.
     env_file:
       - .env
-      - .env.generated
+      - path: .env.generated
+        required: false
     # Nothing is published on the host. Caddy reaches the UI on 8971, and
     # Home Assistant reaches 8971 (API) and 8554 (RTSP restream) over the
     # frontend network.
