@@ -48,7 +48,9 @@ cameras:
   c210:
     ffmpeg:
       output_args:
-        record: preset-record-generic-audio-copy
+        # The restream also carries the G.711 track, which MP4 can't hold:
+        # re-encode audio to AAC (cheap: 8 kHz mono). Video is copied.
+        record: preset-record-generic-audio-aac
       inputs:
         # 2K main stream: recordings only.
         - path: rtsp://127.0.0.1:8554/c210
