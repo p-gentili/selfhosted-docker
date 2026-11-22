@@ -1,0 +1,32 @@
+services:
+  jotty:
+    image: ghcr.io/fccview/jotty:latest
+    container_name: jotty
+    # Must own ./data, ./config and ./cache; init.sh chowns them to this.
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HTTPS: "true"
+      # No trailing slash: the OIDC callback is built as APP_URL + /api/oidc/callback.
+      APP_URL: https://notes.${DOMAIN:?Set DOMAIN in .env}
+      # The middleware checks the session against APP_URL by default, which
+      # would hairpin out through Caddy; keep it inside the container.
+      INTERNAL_API_URL: http://localhost:3000
+    volumes:
+      # Notes, checklists, users, sharing and encryption keys. Back this up.
+      - ./data:/app/data:rw
+      # Themes and settings saved from the admin panel.
+      - ./config:/app/config:rw
+      # Next.js cache, disposable.
+      - ./cache:/app/.next/cache:rw
+    # Nothing published on the host: Caddy reaches 3000 over frontend.
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true

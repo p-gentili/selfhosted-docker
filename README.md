@@ -18,6 +18,7 @@ graph TD
         silo[Silo]
         transmission[Transmission]
         linkding[Linkding]
+        jotty[Jotty]
         ghostfolio[Ghostfolio]
         freshrss[FreshRSS]
         mealy[Mealy]
@@ -60,6 +61,7 @@ graph TD
   caddy --> immich
   caddy --> transmission
   caddy --> linkding
+  caddy --> jotty
   caddy --> ghostfolio
   caddy --> freshrss
   caddy --> mealy
