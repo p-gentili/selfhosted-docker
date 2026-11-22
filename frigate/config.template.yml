@@ -1,0 +1,106 @@
+# Seeded to ./config/config.yml by init.sh on the first run only. After that,
+# ./config/config.yml is the live file: the Frigate UI edits it in place, so
+# change it there (or in the UI), not here.
+version: 0.18-0
+
+mqtt:
+  enabled: true
+  host: mosquitto
+  port: 1883
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+
+# Caddy terminates TLS for frigate.DOMAIN; port 8971 serves plain HTTP.
+tls:
+  enabled: false
+
+# Detection on the Intel GPU with the OpenVINO model bundled in the image.
+detectors:
+  ov:
+    type: openvino
+    device: GPU
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+# go2rtc holds the only connections to the camera and restreams them to
+# Frigate, the live view and Home Assistant. The C210 sends G.711 audio,
+# which MP4 recordings and browsers can't play, so the ffmpeg source adds an
+# AAC copy of the main stream. The URLs use the percent-encoded password
+# that init.sh derives; ONVIF below takes the password as typed.
+go2rtc:
+  streams:
+    c210:
+      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD_URL}@{FRIGATE_TAPO_HOST}:554/stream1"
+      - "ffmpeg:c210#audio=aac"
+    c210_sub:
+      - "rtsp://{FRIGATE_TAPO_USER}:{FRIGATE_TAPO_PASSWORD_URL}@{FRIGATE_TAPO_HOST}:554/stream2"
+
+cameras:
+  c210:
+    ffmpeg:
+      output_args:
+        # The restream also carries the G.711 track, which MP4 can't hold:
+        # re-encode audio to AAC (cheap: 8 kHz mono). Video is copied.
+        record: preset-record-generic-audio-aac
+      inputs:
+        # 2K main stream: recordings only.
+        - path: rtsp://127.0.0.1:8554/c210
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        # 640x360 substream: detection.
+        - path: rtsp://127.0.0.1:8554/c210_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      # Off by default since Frigate 0.18.
+      enabled: true
+      width: 640
+      height: 360
+      fps: 5
+    live:
+      streams:
+        Main: c210
+        Sub: c210_sub
+    # Pan/tilt from the live view. The C210's ONVIF service listens on 2020.
+    onvif:
+      host: "{FRIGATE_TAPO_HOST}"
+      port: 2020
+      user: "{FRIGATE_TAPO_USER}"
+      password: "{FRIGATE_TAPO_PASSWORD}"
+
+objects:
+  track:
+    - person
+
+# Retention by age. If the external drive runs nearly full, Frigate also
+# deletes its oldest recordings first.
+record:
+  enabled: true
+  continuous:
+    days: 3
+  motion:
+    days: 7
+  alerts:
+    retain:
+      days: 30
+      mode: motion
+  detections:
+    retain:
+      days: 30
+      mode: motion
+
+snapshots:
+  enabled: true
+  retain:
+    default: 30

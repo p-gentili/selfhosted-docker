@@ -1,0 +1,21 @@
+services:
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    # Run as the owner of ./config and ./data, so the password file that
+    # init.sh writes stays readable without root-owned files in this folder.
+    user: "1000:1000"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config:/mosquitto/config/auth
+      - ./data:/mosquitto/data
+    # No published ports: Frigate and Home Assistant reach mosquitto:1883
+    # over the frontend network.
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: frontend
+    external: true
