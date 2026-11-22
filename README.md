@@ -28,11 +28,6 @@ graph TD
         homeassistant[Home Assistant]
         frigate[Frigate]
         mosquitto[Mosquitto MQTT]
-        subgraph NextCloud Network
-            nextcloud[NextCloud]
-            nextcloud-code[Collabora]
-            nextcloud-db[Database]
-        end
         subgraph OpenCloud Network
             opencloud[OpenCloud]
             opencloud-collaboration[Collaboration WOPI]
@@ -56,7 +51,6 @@ graph TD
   caddy --> vaultwarden
   caddy --> jellyfin
   caddy --> silo
-  caddy --> nextcloud
   caddy --> opencloud
   caddy --> immich
   caddy --> transmission

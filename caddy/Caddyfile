@@ -19,29 +19,6 @@ silo.{$DOMAIN} {
 	reverse_proxy silo:8080
 }
 
-drive.{$DOMAIN} {
-	encode gzip zstd
-
-        redir /.well-known/carddav /remote.php/dav/ 301
-        redir /.well-known/caldav /remote.php/dav/ 301
-
-	header {
-		Strict-Transport-Security max-age=15552000;
-	}
-
-	reverse_proxy nextcloud:80 {
-		header_up X-Real-IP {remote_host}
-	}
-}
-
-office.{$DOMAIN} {
-	reverse_proxy nextcloud-code:9980 {
-		transport http {
-			tls_insecure_skip_verify
-		}
-	}
-}
-
 photos.{$DOMAIN} {
 	reverse_proxy immich_server:2283 {
 		header_up X-Real-IP {remote_host}

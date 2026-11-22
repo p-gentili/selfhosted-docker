@@ -41,20 +41,20 @@ AUTHENTIK_TAG=<next-version> docker compose up -d server worker   # wait for hea
 
 Then set the new `major.minor` in `.env` and in the compose default.
 
-## Adding a service (Nextcloud example)
+## Adding a service
 
-In Authentik admin:
+In Authentik admin, with `<app>` standing for the service's slug (e.g. `silo`):
 
 1. **Applications > Providers > Create > OAuth2/OpenID Provider**
-   - Name: `nextcloud`
-   - Authorization flow: `default-provider-authorization-explicit-consent`
+   - Name: `<app>`
+   - Authorization flow: `default-provider-authorization-implicit-consent`
    - Client type: `Confidential`
-   - Redirect URIs: `https://drive.${DOMAIN}/apps/user_oidc/code`
+   - Redirect URIs: the callback URL from the service's own docs or README (strict)
    - Signing Key: `authentik Self-signed Certificate`
    - Save — note the generated **Client ID** and **Client Secret**.
 2. **Applications > Applications > Create**
-   - Name: `Nextcloud`
-   - Slug: `nextcloud`
+   - Name: the service's display name
+   - Slug: `<app>`
    - Provider: the one you just made
 3. The OIDC discovery URL will be:
-   `https://auth.${DOMAIN}/application/o/nextcloud/.well-known/openid-configuration`
+   `https://auth.${DOMAIN}/application/o/<app>/.well-known/openid-configuration`
