@@ -3,15 +3,14 @@ Official website: [https://opencloud.eu](https://opencloud.eu)
 
 Github: [https://github.com/opencloud-eu/opencloud](https://github.com/opencloud-eu/opencloud)
 
-OpenCloud is the OCIS-based successor to ownCloud. This stack runs in parallel
-with the existing Nextcloud deployment during migration; both are independent and
-share no containers, volumes, or databases.
+OpenCloud is the OCIS-based successor to ownCloud. It replaced Nextcloud, which
+was retired on 2026-11-22: files moved here in August 2026, calendars, tasks and
+contacts moved into this stack's Radicale, and notes went to Jotty.
 
 ## Collabora CODE
 Official website: [https://www.collaboraonline.com/code/](https://www.collaboraonline.com/code/)
 
-This stack ships its own dedicated Collabora instance (separate from the one in
-the Nextcloud stack). Office editing flows through OpenCloud's built-in
+This stack ships its own dedicated Collabora instance. Office editing flows through OpenCloud's built-in
 collaboration service (the WOPI bridge), which is a second container running the
 same `opencloud` image with a different command.
 
@@ -86,8 +85,7 @@ those clients are ever used; they need the same treatment.
 ### How it works
 With `PROXY_AUTOPROVISION_ACCOUNTS=true`, the first time an Authentik user logs
 in OpenCloud creates a local user record automatically. The `preferred_username`
-claim is used as the OpenCloud username, matching the convention used in the
-Nextcloud stack — so as long as Authentik usernames are stable, this is the
+claim is used as the OpenCloud username, so as long as Authentik usernames are stable, this is the
 identifier that will tie back to a user's data over time.
 
 ### Recovering the initial admin
@@ -184,6 +182,10 @@ Tokens are per-client and individually revocable, so use a separate one per
 device.
 
 ## Migrating calendars and contacts from Nextcloud
+
+> **Done on 2026-08-30; Nextcloud has since been retired.** Kept as a record of
+> how the data got here, and as a guide for migrating from another CalDAV/CardDAV
+> server the same way.
 
 Both stacks run in parallel and Nextcloud's DAV data lives in MariaDB, which
 this migration never touches — so it is non-destructive and safe to repeat
@@ -344,20 +346,9 @@ correctly, which is the part that matters.
 
 ## Backup considerations
 
-Unlike Nextcloud (MariaDB + filesystem), OpenCloud uses embedded storage
+OpenCloud uses embedded storage
 (boltdb + files under `./data`). `pre-backup.sh` stops the `opencloud` and
 `radicale` containers so their data directories are consistent for
 snapshotting; `post-backup.sh` starts them again. Radicale is included because
 its collections are plain files written in place with no transactional store.
 Collabora and the collaboration service stay running — they are stateless.
-
-## Parallel-with-Nextcloud notes
-
-- OpenCloud lives on `opencloud.YOURDOMAIN`; Nextcloud stays on
-  `drive.YOURDOMAIN`. No conflicts.
-- Each stack has its own Collabora; the two never share a WOPI host.
-- Calendars and contacts exist on both sides until they are migrated (see
-  above). Nextcloud keeps serving them read-write in the meantime — nothing
-  here disables them.
-- When Nextcloud is eventually retired, this stack stands on its own — nothing
-  in `opencloud/` references the Nextcloud stack.
